@@ -276,7 +276,7 @@ panel.replaceChildren(
     C.toggle('extinction', 'Atmospheric dimming near horizon'),
     C.sub('Constellations'),
     C.toggle('showConst', 'Constellation lines'),
-    C.select('constNames', 'Constellation names', [['off', 'Off'], ['latin', 'Latin (Ursa Major)'], ['english', 'English (Great Bear)'], ['abbr', 'Abbreviation (UMa)']]),
+    C.select('constNames', 'Constellation names', [['off', 'Off'], ['latin', 'Latin (Ursa Major)'], ['abbr', 'Abbreviation (UMa)']]),
     C.toggle('constBorders', 'Constellation boundaries'),
     C.sub('Objects'),
     C.toggle('milkyWay', 'Milky Way'),

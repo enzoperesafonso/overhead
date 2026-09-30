@@ -34,7 +34,7 @@ export class SkyData {
     this.catalog = buildCatalog(this.parts);
     this.names = names.map(([name, ra, dec, mag, con]) => ({ name, vec: eqToVec(ra, dec), mag, con }));
     this.constellations = cons.map((c) => ({
-      id: c.id, la: c.la, en: c.en, vec: eqToVec(c.ra, c.dec),
+      id: c.id, la: c.la, vec: eqToVec(c.ra, c.dec),
       lines: c.lines.map((l) => l.map(([ra, dec]) => eqToVec(ra, dec))),
     }));
     this.borders = borders.map((l) => l.map(([ra, dec]) => eqToVec(ra, dec)));

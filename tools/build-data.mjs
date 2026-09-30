@@ -65,7 +65,6 @@ const constellations = cons.map((f) => {
   return {
     id: f.id,
     la: words(p.la || p.name),
-    en: words(p.en || p.name),
     ra: r(ra360(f.geometry.coordinates[0]), 2),
     dec: r(f.geometry.coordinates[1], 2),
     lines: (lines.get(f.id) || []).map((l) => l.map(([lo, la]) => [r(ra360(lo), 3), r(la, 3)])),

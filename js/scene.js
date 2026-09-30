@@ -523,7 +523,7 @@ export function renderPoster(S, cfg, data, opts = {}) {
       const v = project(c.vec);
       if (!P.vis(v)) continue;
       const [x, y] = P.xy(v);
-      const str = (cfg.constNames === 'abbr' ? c.id : cfg.constNames === 'english' ? c.en : c.la).toUpperCase();
+      const str = (cfg.constNames === 'abbr' ? c.id : c.la).toUpperCase();
       const o = textStyle({ size: labelPt * 0.95, tracking: cfg.constNames === 'abbr' ? 0.2 : 0.26, align: 'center', alpha: 0.85 });
       const w = S.textWidth(str, o);
       const bx = [x - w / 2, y - labelPt * PT * 0.8, x + w / 2, y + labelPt * PT * 0.3];

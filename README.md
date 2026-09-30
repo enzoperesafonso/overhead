@@ -13,7 +13,7 @@ Made by [Enzo Afonso](https://github.com/enzoperesafonso).
 ## Features
 - Real sky for any date, time, time zone and location (precession, planets, Sun, Moon with phase, Milky Way).
 - Limiting magnitude (up to 8), star size/contrast, realistic star colours, glow or spikes, atmospheric dimming.
-- Constellation lines, names (Latin / English / abbreviation), IAU boundaries, Messier objects, named stars.
+- Constellation lines, names (Latin or abbreviation), IAU boundaries, Messier objects, named stars.
 - Alt-az and RA/Dec grids, ecliptic, celestial equator, degree/compass borders, 4 projections, field of view, rotation, mirror.
 - 11 themes plus full colour control; shapes: circle, square, rounded, arch, hexagon, heart, full page.
 - 18 paper sizes + custom, bleed, page frame, typography (sans/serif/mono or your own .ttf).

@@ -1,0 +1,6 @@
+node_modules/
+tools/raw/
+tools/out/
+.DS_Store
+.claude/
+images.jpeg

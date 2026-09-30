@@ -4,6 +4,7 @@ import { SkyData } from './data.js';
 import { CanvasSurface, PdfSurface, SvgSurface } from './surfaces.js';
 import { renderPoster, pageDims, resolveMoment } from './scene.js';
 import * as A from './astro.js';
+import { LORE_TRADITIONS } from './lore.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const STORE = 'overhead.v1';
@@ -279,6 +280,9 @@ panel.replaceChildren(
     C.select('constNames', 'Constellation names', [['off', 'Off'], ['latin', 'Latin (Ursa Major)'], ['abbr', 'Abbreviation (UMa)']]),
     C.toggle('constBorders', 'Constellation boundaries'),
     C.sub('Objects'),
+    C.toggle('lore', 'Southern African star lore'),
+    C.select('loreTradition', 'Lore tradition', LORE_TRADITIONS, { show: (c) => c.lore }),
+    C.hint('Local names and stories from published ethnoastronomy. Spellings and meanings vary between communities.', (c) => c.lore),
     C.toggle('milkyWay', 'Milky Way'),
     C.range('mwOpacity', 'Milky Way strength', 0.2, 3, 0.1, { show: (c) => c.milkyWay, fmt: (v) => v.toFixed(1) }),
     C.toggle('planets', 'Planets'),
@@ -357,6 +361,7 @@ about.querySelector('.about-body').replaceChildren(
     h('p', { class: 'hint' }, 'Made by ', h('a', { href: 'https://github.com/enzoperesafonso', target: '_blank', rel: 'noopener' }, 'Enzo Afonso'), ' · ', h('a', { href: 'https://github.com/enzoperesafonso/overhead', target: '_blank', rel: 'noopener' }, 'source on GitHub')),
     h('p', { class: 'hint' }, 'Overhead runs entirely in your browser: your designs and fonts never leave your device. The only network call is the optional place search, which sends just the text you type to the Open-Meteo geocoding service.'),
     h('p', { class: 'hint' }, 'Planet, Sun and Moon positions are calculated (Paul Schlyter\'s low-precision method, good to about an arcminute for planets). Stars are shown at their J2000 positions, corrected for precession.'),
+    h('p', { class: 'hint' }, 'Star lore names are compiled from published ethnoastronomy, chiefly the ', h('a', { href: 'https://assa.saao.ac.za/astronomy-in-south-africa/ethnoastronomy/', target: '_blank', rel: 'noopener' }, 'ASSA African Ethnoastronomy page'), ' and Royal Museums Greenwich\'s ', h('a', { href: 'https://www.rmg.co.uk/stories/space-astronomy/south-african-star-myths', target: '_blank', rel: 'noopener' }, 'South African star myths'), '. Traditions differ widely; corrections are welcome.'),
     h('p', { class: 'hint' }, 'Star, constellation, Milky Way and deep-sky data: d3-celestial by Olaf Frohn (BSD-3-Clause), derived from the Hipparcos catalogue. PDF export: jsPDF (MIT). Place search: Open-Meteo. Overhead is MIT licensed.'),
 );
 $('#btn-about').addEventListener('click', () => about.showModal());
@@ -538,6 +543,22 @@ function toast(msg) {
 }
 
 // ------------------------------------------------------------------ boot
+
+// Phones: the sections become tabs under the preview (one at a time); desktop keeps the accordion.
+const sections = [...panel.querySelectorAll('details.sec')];
+const tabBar = h('div', { id: 'tabs', role: 'tablist' }, sections.map((d, i) => h('button', { type: 'button', role: 'tab', onclick: () => { selectTab(i); window.scrollTo({ top: 0 }); } }, d.querySelector('summary').textContent)));
+panel.prepend(tabBar);
+const phone = matchMedia('(max-width: 820px)');
+function selectTab(i) {
+  sections.forEach((d, j) => { d.open = j === i; });
+  [...tabBar.children].forEach((b, j) => b.setAttribute('aria-selected', String(j === i)));
+}
+function layoutForWidth() {
+  if (phone.matches) selectTab(Math.max(0, sections.findIndex((d) => d.open)));
+  else sections.forEach((d, j) => { d.open = j === 0 || j === sections.length - 1; });
+}
+phone.addEventListener('change', () => { layoutForWidth(); schedule(); });
+layoutForWidth();
 
 syncAll();
 sky.load().then(() => { schedule(); }).catch((e) => {

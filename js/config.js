@@ -129,6 +129,8 @@ export const DEFAULTS = {
   dsoMag: 8,
   dsoLabels: true,
   starNames: 0,
+  lore: false,
+  loreTradition: 'all',
   grid: 'off',
   gridStep: 30,
   gridAlpha: 0.25,
@@ -171,7 +173,7 @@ export const DEFAULTS = {
 };
 
 export const EXAMPLES = [
-  { name: 'The night we met', set: { title: 'THE NIGHT WE MET', date: '2021-08-05', time: '22:00', tz: 'Africa/Johannesburg', placeName: 'SIGNAL HILL, CAPE TOWN', lat: -33.9166, lon: 18.3985, theme: 'Midnight' } },
+  { name: 'The night we met', set: { title: 'THE NIGHT WE MET', date: '2021-08-05', time: '22:00', tz: 'Africa/Johannesburg', placeName: 'SIGNAL HILL, CAPE TOWN', lat: -33.9166, lon: 18.3985, theme: 'Midnight', lore: true, loreTradition: 'san', starNames: 0 } },
   { name: 'Wedding day', set: { title: 'THE DAY WE SAID YES', subtitle: 'Anna & Marco', date: '2019-06-15', time: '18:30', tz: 'Africa/Johannesburg', placeName: 'CAMPS BAY, CAPE TOWN', lat: -33.95, lon: 18.3772, theme: 'Noir Gold', ring: 'degrees', constNames: 'latin', milkyWay: true, moon: true, planets: true } },
   { name: 'Welcome, little one', set: { title: 'THE NIGHT YOU ARRIVED', subtitle: 'Emma Rose', date: '2023-03-09', time: '04:12', tz: 'Africa/Johannesburg', placeName: 'GROOT SCHUUR, CAPE TOWN', lat: -33.9419, lon: 18.4741, theme: 'Deep Space', milkyWay: true, moon: true, planets: true, ring: 'compass' } },
   { name: 'Moon landing', set: { title: 'ONE SMALL STEP', subtitle: 'Apollo 11 · 20 July 1969', date: '1969-07-20', time: '22:17', tz: 'Africa/Johannesburg', placeName: 'CAPE POINT, CAPE TOWN', lat: -34.3568, lon: 18.4974, theme: 'Blueprint', moon: true, planets: true, constNames: 'latin', grid: 'altaz', ring: 'degrees' } },

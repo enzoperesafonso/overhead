@@ -28,6 +28,8 @@ const variants = {
   reference: {},
   wedding: { ...themeFields('Noir Gold'), ...EXAMPLES[1].set, theme: 'Noir Gold', milkyWay: false },
   heart: { shape: 'heart', ...themeFields('Rose Gold'), theme: 'Rose Gold', belowHorizon: true, fov: 120, starStyle: 'glow', limMag: 7, ring: 'line' },
+  lore_san: { ...themeFields('Deep Space'), theme: 'Deep Space', lore: true, loreTradition: 'san', showConst: false, limMag: 5.5, starStyle: 'glow' },
+  lore_all: { ...themeFields('Midnight'), lore: true, loreTradition: 'all', constNames: 'latin', date: '2021-05-20', time: '21:00' },
   landscape_grid: { orientation: 'landscape', ...themeFields('Blueprint'), theme: 'Blueprint', grid: 'both', ecliptic: true, celestialEquator: true, constNames: 'abbr', dsos: true, planets: true, moon: true, sun: true, starNames: 20, ring: 'degrees' },
 };
 for (const [name, over] of Object.entries(variants)) {

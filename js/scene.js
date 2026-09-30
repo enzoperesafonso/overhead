@@ -5,6 +5,7 @@ import * as A from './astro.js';
 import { PAGE_SIZES } from './config.js';
 import { lerpColor } from './surfaces.js';
 import { GAL, renderMilkyWay } from './milkyway.js';
+import { loreFor } from './lore.js';
 
 const PT = 25.4 / 72;
 const { D2R, R2D } = A;
@@ -499,6 +500,56 @@ export function renderPoster(S, cfg, data, opts = {}) {
 
   // ---------- labels
   const textStyle = (o) => ({ ...labelFont, ...o });
+  if (cfg.lore) {
+    const dot = { stroke: cfg.labelColor, lw: 0.14 * lineSc, alpha: 0.75, dash: [0.05, 0.85 * lineSc], cap: 'round' };
+    const nameO = textStyle({ size: labelPt * 1.3, italic: true, tracking: 0.05, align: 'center' });
+    const subO = textStyle({ size: labelPt * 1.05, italic: true, tracking: 0.04, align: 'center', alpha: 0.85 });
+    const line = labelPt * PT * 1.5;
+    for (const e of loreFor(cfg.loreTradition, data)) {
+      let pts = [], anchor;
+      if (e.milky) { // walk along the galactic plane until a spot on the chart takes the label
+        const cand = [];
+        for (let l = 0; l < 360; l += 15) {
+          const c = Math.cos(l * D2R), sn = Math.sin(l * D2R);
+          const eq = [GAL[0] * c + GAL[3] * sn, GAL[1] * c + GAL[4] * sn, GAL[2] * c + GAL[5] * sn];
+          const v = project(eq);
+          if (P.vis(v)) { const [x, y] = P.xy(v); if (inShape(x, y, 0.8)) cand.push([x, y]); }
+        }
+        cand.sort((a, b2) => Math.hypot(a[0] - cx, a[1] - cy) - Math.hypot(b2[0] - cx, b2[1] - cy));
+        anchor = { cands: cand.slice(0, 6), center: true };
+      } else {
+        const groups = e.groups.map((g) => g.map(project));
+        if (groups.flat().some((v) => !P.vis(v))) continue;
+        pts = groups.map((g) => g.map((v) => P.xy(v)));
+        if (pts.flat().some((q) => !inShape(q[0], q[1]))) continue;
+        const xs = pts.flat().map((q) => q[0]), ys = pts.flat().map((q) => q[1]);
+        const single = pts.flat().length === 1;
+        anchor = single
+          ? { cands: [[xs[0] + 2.6 * sc, ys[0] + 0.4 * sc, 'left'], [xs[0] - 2.6 * sc, ys[0] + 0.4 * sc, 'right']] }
+          : { cands: [[(Math.min(...xs) + Math.max(...xs)) / 2, Math.max(...ys) + 4.4 * sc, 'center'], [(Math.min(...xs) + Math.max(...xs)) / 2, Math.min(...ys) - 3.4 * sc - (e.meaning ? line : 0), 'center']] };
+      }
+      const lines2 = e.meaning ? 2 : 1;
+      let placed = false;
+      for (const cnd of anchor.cands) {
+        const align = anchor.center ? 'center' : cnd[2];
+        const w = Math.max(S.textWidth(e.name, { ...nameO, align }), e.meaning ? S.textWidth(e.meaning, subO) : 0);
+        const x0 = align === 'left' ? cnd[0] : align === 'right' ? cnd[0] - w : cnd[0] - w / 2;
+        const bx = [x0, cnd[1] - labelPt * PT * 0.85, x0 + w, cnd[1] + line * (lines2 - 1) + labelPt * PT * 0.3];
+        if (!boxInside(bx) || !labels.free(bx, 0.6)) continue;
+        labels.add(bx);
+        const tx = align === 'left' ? x0 : align === 'right' ? x0 + w : x0 + w / 2;
+        S.text(e.name, tx, cnd[1], { ...nameO, align });
+        if (e.meaning) S.text(e.meaning, tx, cnd[1] + line, { ...subO, align });
+        placed = true;
+        break;
+      }
+      if (!placed) continue;
+      for (const g of pts) {
+        if (g.length > 1) S.poly([g], dot);
+        else S.circle(g[0][0], g[0][1], 1.5 * sc, { stroke: cfg.labelColor, lw: 0.14 * lineSc, alpha: 0.75 });
+      }
+    }
+  }
   if (cfg.starNames > 0) {
     let count = 0;
     for (const n of data.names) {

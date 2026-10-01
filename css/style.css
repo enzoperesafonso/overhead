@@ -100,7 +100,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 2px 0; }
   :root { --stage-h: 42vh; --tabs-h: 46px; }
   body { overflow: auto; }
   .bar { position: sticky; top: 0; z-index: 5; }
-  main { flex-direction: column; overflow: visible; }
+  main { flex: none; min-height: auto; flex-direction: column; overflow: visible; }
   #stage { order: -1; position: sticky; top: var(--bar-h); z-index: 4; height: var(--stage-h); flex: none; border-bottom: 1px solid var(--line); }
   #sheet { padding: 10px; }
   #status { font-size: 11px; padding: 0 12px 6px; min-height: 0; line-height: 1.3; }

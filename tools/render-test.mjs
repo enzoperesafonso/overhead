@@ -18,7 +18,8 @@ const { jsPDF } = mod.exports;
 const { SkyData } = await import('../js/data.js');
 const { PdfSurface, SvgSurface } = await import('../js/surfaces.js');
 const { renderPoster, pageDims } = await import('../js/scene.js');
-const { DEFAULTS, EXAMPLES, themeFields } = await import('../js/config.js');
+const { DEFAULTS, EXAMPLES, themeFields, chartDefaultsFor, CHART_EXAMPLES } = await import('../js/config.js');
+const { renderChart, chartPageDims } = await import('../js/chart.js');
 
 const sky = new SkyData(async (f) => JSON.parse(readFileSync(join(root, 'data', f), 'utf8')));
 await sky.load();
@@ -45,3 +46,16 @@ for (const [name, over] of Object.entries(variants)) {
   writeFileSync(join(out, `${name}.svg`), svg.toString());
   console.log(name.padEnd(16), `${(bytes.length / 1024).toFixed(0)} KB pdf`, `${meta.stars} stars`, `${(performance.now() - t0).toFixed(0)} ms`);
 }
+
+// Every stargazing-chart example: planispheres as two pages (wheel + cover), sky-overhead charts as one.
+CHART_EXAMPLES.forEach((e, i) => {
+  const cfg = { ...DEFAULTS, ...chartDefaultsFor(e.set.chartKind), mode: 'chart', ...e.set, milkyWay: false }; // the Milky Way raster needs a canvas, so it is skipped here
+  const { W, H } = chartPageDims(cfg);
+  const name = `chart${String(i).padStart(2, '0')}_${e.set.chartKind}`;
+  const pdf = new PdfSurface(jsPDF, W, H, { title: name });
+  renderChart(pdf, cfg, sky, 'wheel');
+  if (cfg.chartKind !== 'zenith') { pdf.newPage(); renderChart(pdf, cfg, sky, 'cover'); }
+  const bytes = Buffer.from(pdf.doc.output('arraybuffer'));
+  writeFileSync(join(out, `${name}.pdf`), bytes);
+  console.log(name.padEnd(24), `${(bytes.length / 1024).toFixed(0)} KB pdf`, e.name);
+});

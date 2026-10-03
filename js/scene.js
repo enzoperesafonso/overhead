@@ -45,6 +45,14 @@ export function formatDate(cfg) {
   return s;
 }
 
+/**
+ * Fixed frame centred on a celestial pole (stars only, independent of time): used for planispheres.
+ * Rows are the screen-east, screen-north and 'up' (towards the pole) axes; RA 0h points up the page.
+ */
+export function poleMatrix(south) {
+  return south ? [0, 1, 0, 1, 0, 0, 0, 0, -1] : [0, -1, 0, 1, 0, 0, 0, 0, 1];
+}
+
 // ------------------------------------------------------------- shapes
 
 function shapeInfo(shape, D) {
@@ -185,7 +193,7 @@ export function renderPoster(S, cfg, data, opts = {}) {
 
   // ---------- sky frame
   const { jd } = resolveMoment(cfg);
-  const M = A.horizonMatrix(jd, cfg.lat, cfg.lon);
+  const M = cfg.frame === 'pole' ? poleMatrix(cfg.lat < 0) : A.horizonMatrix(jd, cfg.lat, cfg.lon);
   const lst = (A.gmst(jd) + cfg.lon + 720) % 360;
   const Mdate = A.ofDateToHorizon(lst, cfg.lat);
 
@@ -266,7 +274,7 @@ export function renderPoster(S, cfg, data, opts = {}) {
   else S.poly([shapePts], { fill: cfg.bg1 });
 
   // speckle / dust
-  if (cfg.dust) {
+  if (cfg.dust && !cfg.nakedEye) {
     const rnd = mulberry32(cfg.seed || 1);
     const n = Math.round(Math.PI * Rc * Rc * 0.16 * cfg.dustAmount);
     for (let i = 0; i < n; i++) {
@@ -348,9 +356,9 @@ export function renderPoster(S, cfg, data, opts = {}) {
       const c = Math.cos(OBL * D2R), s = Math.sin(OBL * D2R);
       pts.push(project([Math.cos(l * D2R), Math.sin(l * D2R) * c, Math.sin(l * D2R) * s]));
     }
-    S.poly(runsOf(pts, 3), { stroke: '#f2c14e', lw: 0.22 * lineSc, alpha: 0.8, dash: [3 * lineSc, 1.4 * lineSc] });
+    S.poly(runsOf(pts, 3), { stroke: cfg.mono ? cfg.lineColor : '#f2c14e', lw: 0.22 * lineSc, alpha: 0.8, dash: [3 * lineSc, 1.4 * lineSc] });
   }
-  if (cfg.belowHorizon && zLimit > Math.PI / 2 + 0.01 && !gridAz) {
+  if (cfg.belowHorizon && zLimit > Math.PI / 2 + 0.01 && !gridAz && cfg.frame !== 'pole') {
     S.circle(cx, cy, radius(Math.PI / 2), { stroke: cfg.lineColor, lw: 0.2 * lineSc, alpha: 0.6, dash: [1.5 * lineSc, 1 * lineSc] });
   }
 
@@ -375,7 +383,7 @@ export function renderPoster(S, cfg, data, opts = {}) {
   if (cfg.dsos) {
     const st = { stroke: cfg.lineColor, lw: 0.13 * lineSc, alpha: 0.9 };
     for (const o of data.dsos) {
-      if (o.mag > cfg.dsoMag) continue;
+      if (o.mag > (cfg.nakedEye ? Math.min(cfg.dsoMag, 6) : cfg.dsoMag)) continue;
       const v = project(o.vec);
       if (!P.vis(v)) continue;
       const [x, y] = P.xy(v);
@@ -401,7 +409,7 @@ export function renderPoster(S, cfg, data, opts = {}) {
 
   // ---------- stars
   const cat = data.catalog;
-  const lim = cfg.limMag;
+  const lim = cfg.nakedEye ? Math.min(cfg.limMag, 6) : cfg.limMag;
   const p = 0.6 + 0.4 * cfg.sizeContrast;
   const starR = (mag) => sc * cfg.starSize * (0.05 + 0.062 * Math.pow(Math.max(0, 7.6 - mag), p));
   const bins = [];
@@ -413,6 +421,7 @@ export function renderPoster(S, cfg, data, opts = {}) {
   const realistic = cfg.starMode === 'realistic';
   const rc2 = (Rc * 1.02) ** 2;
   const spikes = [];
+  const starBoxes = []; // bright stars keep labels off them (print-friendly charts)
   let drawn = 0;
   for (let i = 0; i < cat.n; i++) {
     let mag = cat.mag[i];
@@ -442,6 +451,7 @@ export function renderPoster(S, cfg, data, opts = {}) {
     }
     S.circle(x, y, rr, { fill, alpha });
     if (cfg.starStyle === 'spikes' && mag < 2.2) spikes.push([x, y, rr, fill]);
+    if (cfg.mono && mag < 4.6) starBoxes.push([x - rr - 0.2, y - rr - 0.2, x + rr + 0.2, y + rr + 0.2]);
     drawn++;
   }
   for (const [x, y, rr, fill] of spikes) {
@@ -456,6 +466,7 @@ export function renderPoster(S, cfg, data, opts = {}) {
   if (cfg.planets || cfg.sun || cfg.moon) {
     for (const bd of A.solarSystem(jd)) {
       if (bd.kind === 'planet' && !cfg.planets) continue;
+      if (cfg.nakedEye && (bd.name === 'Uranus' || bd.name === 'Neptune')) continue;
       if (bd.kind === 'sun' && !cfg.sun) continue;
       if (bd.kind === 'moon' && !cfg.moon) continue;
       const hv = apply(Mdate, A.eqToVec(bd.ra, bd.dec));
@@ -484,8 +495,8 @@ export function renderPoster(S, cfg, data, opts = {}) {
         const t = norm3([sunV[0] - dot3(sunV, bd.hv) * bd.hv[0], sunV[1] - dot3(sunV, bd.hv) * bd.hv[1], sunV[2] - dot3(sunV, bd.hv) * bd.hv[2]]);
         const near = P.xy(norm3([bd.hv[0] + 0.02 * t[0], bd.hv[1] + 0.02 * t[1], bd.hv[2] + 0.02 * t[2]]));
         const ang = Math.atan2(near[1] - bd.y, near[0] - bd.x);
-        const dark = lerpColor(cfg.bg1, cfg.moonColor, 0.16);
-        S.circle(bd.x, bd.y, r, { fill: dark, stroke: cfg.moonColor, lw: 0.14 * lineSc, alpha: 1 });
+        const dark = cfg.moonDark || lerpColor(cfg.bg1, cfg.moonColor, 0.16);
+        S.circle(bd.x, bd.y, r, { fill: dark, stroke: cfg.moonStroke || cfg.moonColor, lw: 0.14 * lineSc, alpha: 1 });
         const k2 = 2 * bd.illum - 1;
         const poly = [];
         for (let a = -90; a <= 90; a += 6) poly.push([r * Math.cos(a * D2R), r * Math.sin(a * D2R)]);
@@ -499,7 +510,25 @@ export function renderPoster(S, cfg, data, opts = {}) {
   }
 
   // ---------- labels
+  for (const bx of starBoxes) labels.add(bx);
+  // white knock-out behind labels so lines and stars never run through the lettering (monochrome charts)
+  const knock = (bx) => { if (cfg.mono) S.rect(bx[0] - 0.4, bx[1] - 0.15, bx[2] - bx[0] + 0.8, bx[3] - bx[1] + 0.35, { fill: cfg.pageBg, alpha: 0.9 }); };
   const textStyle = (o) => ({ ...labelFont, ...o });
+  if (cfg.mono) { // planets, Sun and Moon get their labels first
+    for (let i = dsoDraw.length - 1; i >= 0; i--) {
+      const d = dsoDraw[i];
+      if (!d.planet) continue;
+      dsoDraw.splice(i, 1);
+      const o = textStyle({ tracking: 0.08 });
+      const w = S.textWidth(d.t, o);
+      for (const [ox, oy] of [[0, 0], [-w - 6 * sc, 0], [0, -3.2 * sc], [0, 3.2 * sc]]) {
+        const bx = [d.x + ox, d.y + oy - labelPt * PT * 1.1, d.x + ox + w, d.y + oy + labelPt * PT * 0.2];
+        if (!boxInside(bx) || !labels.free(bx, 0.3)) continue;
+        labels.add(bx); knock(bx); S.text(d.t, d.x + ox, d.y + oy, o);
+        break;
+      }
+    }
+  }
   if (cfg.lore) {
     const dot = { stroke: cfg.labelColor, lw: 0.14 * lineSc, alpha: 0.75, dash: [0.05, 0.85 * lineSc], cap: 'round' };
     const nameO = textStyle({ size: labelPt * 1.3, italic: true, tracking: 0.05, align: 'center' });
@@ -537,6 +566,7 @@ export function renderPoster(S, cfg, data, opts = {}) {
         const bx = [x0, cnd[1] - labelPt * PT * 0.85, x0 + w, cnd[1] + line * (lines2 - 1) + labelPt * PT * 0.3];
         if (!boxInside(bx) || !labels.free(bx, 0.6)) continue;
         labels.add(bx);
+        knock(bx);
         const tx = align === 'left' ? x0 : align === 'right' ? x0 + w : x0 + w / 2;
         S.text(e.name, tx, cnd[1], { ...nameO, align });
         if (e.meaning) S.text(e.meaning, tx, cnd[1] + line, { ...subO, align });
@@ -564,6 +594,7 @@ export function renderPoster(S, cfg, data, opts = {}) {
       const bx = [x + rr + 0.9, y - labelPt * PT * 0.8, x + rr + 0.9 + w, y + labelPt * PT * 0.35];
       if (!boxInside(bx) || !labels.free(bx)) continue;
       labels.add(bx);
+      knock(bx);
       S.text(n.name, bx[0], y + labelPt * PT * 0.3, o);
       count++;
     }
@@ -577,10 +608,17 @@ export function renderPoster(S, cfg, data, opts = {}) {
       const str = (cfg.constNames === 'abbr' ? c.id : c.la).toUpperCase();
       const o = textStyle({ size: labelPt * 0.95, tracking: cfg.constNames === 'abbr' ? 0.2 : 0.26, align: 'center', alpha: 0.85 });
       const w = S.textWidth(str, o);
-      const bx = [x - w / 2, y - labelPt * PT * 0.8, x + w / 2, y + labelPt * PT * 0.3];
-      if (!boxInside(bx) || !labels.free(bx, 1.2)) continue;
-      labels.add(bx);
-      S.text(str, x, y, o);
+      // monochrome charts try nearby spots when the first one is crowded
+      const tries = cfg.mono ? [[0, 0], [0, -3.6], [0, 3.6], [-7, 0], [7, 0], [0, -7], [0, 7], [-9, -3.6], [9, 3.6]] : [[0, 0]];
+      for (const [ox, oy] of tries) {
+        const tx = x + ox * sc, ty = y + oy * sc;
+        const bx = [tx - w / 2, ty - labelPt * PT * 0.8, tx + w / 2, ty + labelPt * PT * 0.3];
+        if (!boxInside(bx) || !labels.free(bx, 1.2)) continue;
+        labels.add(bx);
+        knock(bx);
+        S.text(str, tx, ty, o);
+        break;
+      }
     }
   }
   for (const d of dsoDraw) {
@@ -589,6 +627,7 @@ export function renderPoster(S, cfg, data, opts = {}) {
     const bx = [d.x, d.y - labelPt * PT * 1.1, d.x + w, d.y + labelPt * PT * 0.2];
     if (!boxInside(bx) || !labels.free(bx, 0.3)) continue;
     labels.add(bx);
+    knock(bx);
     S.text(d.t, d.x, d.y, o);
   }
   S.restore();

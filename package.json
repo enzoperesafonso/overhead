@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "start": "node server.mjs",
-    "test": "node tools/render-test.mjs",
+    "test": "node tools/chart-check.mjs && node tools/render-test.mjs",
     "build:data": "node tools/build-data.mjs node_modules/d3-celestial/data"
   },
   "devDependencies": { "d3-celestial": "0.7.35" }

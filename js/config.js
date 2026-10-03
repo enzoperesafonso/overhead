@@ -86,7 +86,47 @@ export function themeFields(name) {
   return { ...t, starStyle: glow ? 'glow' : 'dot' };
 }
 
+/** Shared by both stargazing charts (they always print in black and white). */
+const CHART_BASE = { nakedEye: true, showConst: true, constBorders: false, dsos: false, lore: false, milkyWay: false, ecliptic: true, celestialEquator: true, grid: 'off', titleFont: 'sans', bodyFont: 'sans' };
+
+/** Defaults applied when a chart type is chosen. A3 suits the planisphere best: bigger wheel, easier to read. */
+export function chartDefaultsFor(kind) {
+  return kind === 'zenith'
+    ? { ...CHART_BASE, limMag: 6, starSize: 1.3, constNames: 'latin', starNames: 14, pageSize: 'A4' }
+    : { ...CHART_BASE, limMag: 3, starSize: 0.8, constNames: 'abbr', starNames: 10, pageSize: 'A3' };
+}
+
+const CT = { tz: 'Africa/Johannesburg', placeName: 'TABLE MOUNTAIN, CAPE TOWN', lat: -33.9628, lon: 18.4098 };
+const SUTHERLAND = { tz: 'Africa/Johannesburg', placeName: 'SUTHERLAND (SAAO), SOUTH AFRICA', lat: -32.3792, lon: 20.81 };
+
+export const CHART_EXAMPLES = [
+  { name: 'Planisphere · Cape Town, A3 (recommended)', set: { chartKind: 'planisphere', ...CT } },
+  { name: 'Planisphere · Sutherland, detailed with grid', set: { chartKind: 'planisphere', ...SUTHERLAND, limMag: 5, starSize: 0.9, constNames: 'latin', grid: 'equatorial', gridStep: 30, dsos: true, dsoMag: 6, starNames: 22 } },
+  { name: 'Planisphere · Windhoek, round window', set: { chartKind: 'planisphere', tz: 'Africa/Windhoek', placeName: 'WINDHOEK, NAMIBIA', lat: -22.5609, lon: 17.0658, chartProjection: 'stereo', limMag: 3.5, constNames: 'abbr' } },
+  { name: 'Planisphere · Khoikhoi & San names, Milky Way', set: { chartKind: 'planisphere', ...CT, milkyWay: true, mwOpacity: 1.2, lore: true, loreTradition: 'all', constNames: 'off', limMag: 3.5, starNames: 0 } },
+  { name: 'Planisphere · Minimal, bold stars', set: { chartKind: 'planisphere', ...CT, limMag: 2.5, starSize: 1.1, constNames: 'off', starNames: 0, ecliptic: false, celestialEquator: false } },
+  { name: 'Planisphere · London, serif, A4', set: { chartKind: 'planisphere', tz: 'Europe/London', placeName: 'LONDON, UK', lat: 51.5074, lon: -0.1278, chartProjection: 'equalarea', titleFont: 'serif', bodyFont: 'serif', constNames: 'latin', limMag: 4, pageSize: 'A4' } },
+  { name: 'Sky overhead · Cape Town, winter evening', set: { chartKind: 'zenith', ...CT, date: '2025-06-21', time: '20:00' } },
+  { name: 'Sky overhead · Sutherland, detailed A3', set: { chartKind: 'zenith', ...SUTHERLAND, date: '2025-07-12', time: '22:00', limMag: 6, constNames: 'latin', dsos: true, dsoMag: 6, starNames: 30, pageSize: 'A3' } },
+  { name: 'Sky overhead · Beginner friendly, Milky Way', set: { chartKind: 'zenith', ...CT, milkyWay: true, mwOpacity: 1.2, date: '2025-09-20', time: '20:30', limMag: 4, starSize: 1.5, constNames: 'latin', starNames: 20 } },
+  { name: 'Sky overhead · Khoikhoi & San names', set: { chartKind: 'zenith', ...CT, date: '2025-05-24', time: '19:30', lore: true, loreTradition: 'khoikhoi', constNames: 'abbr', limMag: 5, starNames: 8 } },
+];
+
 export const DEFAULTS = {
+  // Mode: '' until chosen ('poster' | 'chart')
+  mode: '',
+  chartDefaultsFor: '', // which chart type's defaults were last applied
+  chartKind: 'planisphere',
+  chartPart: 'wheel',
+  chartProjection: 'equidistant',
+  chartTitle: '',
+  howTo: true,
+  details: true,
+  credit: true,
+  logoMode: 'default', // 'default' = the Overhead logo, 'custom' = uploaded, 'none'
+  logoPos: 'left',
+  nakedEye: false,
+
   // Moment
   title: 'THE NIGHT WE MET',
   subtitle: '',

@@ -1,8 +1,10 @@
+<p align="center"><img src="docs/logo.svg" alt="Overhead" width="300"></p>
+
 # Overhead
 
 ![Overhead poster example](docs/example.png)
 
-**Overhead** turns any moment into a print-ready map of the sky above it: the night you met, a wedding, a birth. Design it, then download a **vector PDF**. It's free and open source, and everything runs in your browser: no backend, no accounts, nothing uploaded.
+**Overhead** turns any moment into a print-ready poster of the sky above it: the night you met, a wedding, a birth. It also makes black-and-white stargazing charts (a planisphere and a sky-overhead chart) to use outside. Design it, then download a **vector PDF**. It's free and open source, and everything runs in your browser: no backend, no accounts, nothing uploaded.
 
 **Live site:** https://enzoperesafonso.github.io/overhead/
 
@@ -17,6 +19,8 @@ Made by [Enzo Afonso](https://github.com/enzoperesafonso).
 - Alt-az and RA/Dec grids, ecliptic, celestial equator, degree/compass borders, 4 projections, field of view, rotation, mirror.
 - 11 themes plus full colour control; shapes: circle, square, rounded, arch, hexagon, heart, full page.
 - 18 paper sizes + custom, bleed, page frame, typography (sans/serif/mono or your own .ttf).
+- **Stargazing charts**, always black and white for easy printing: a **planisphere** (rotating star wheel plus a horizon-window cover, reusable all year) or a **sky overhead** chart for one date, time and place (compass ring, altitude circles, visible planets and the Moon). Both include a how-to, location and time details, an optional logo and an optional credit line.
+- **Naked-eye only** button: stars to magnitude 6, bright deep-sky objects, the five visible planets.
 - Export PDF (vector), SVG, PNG (up to 600 dpi); share a link or save/open a design file. Zoom and pan the live preview.
 
 ## Run
@@ -35,7 +39,7 @@ The app is plain static files (ES modules, no build step), so any static host wo
 - Place search uses the Open-Meteo geocoding API (only the search text is sent). Offline, type coordinates instead.
 - Pick the time zone for the *place* (search sets it) so daylight saving is right.
 - Stars beyond magnitude 6 (1 MB) load on demand.
-- `npm test` renders sample posters headlessly to PDF/SVG in `tools/out`.
+- `npm test` checks the planisphere geometry and renders sample posters and planispheres headlessly to PDF/SVG in `tools/out`.
 - Regenerate data: `npm i && npm run build:data`.
 
 ## Credits

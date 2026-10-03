@@ -41,6 +41,19 @@ export function wallToUtc(y, mo, d, h, mi, tz) {
   }
 }
 
+/** Standard-time (no daylight saving) UTC offset of a zone, whether it observes DST, and a display name. */
+export function standardOffsetHours(tz, lon) {
+  const label = (h) => `UTC${h >= 0 ? '+' : '\u2212'}${Math.abs(h)}`;
+  if (!tz || tz === 'auto') { const h = Math.round(lon / 15); return { hours: h, dst: false, name: label(h) }; }
+  const fixed = /^UTC([+-]\d+(?:\.\d+)?)$/.exec(tz);
+  if (fixed) { const h = parseFloat(fixed[1]); return { hours: h, dst: false, name: tz }; }
+  try {
+    const jan = tzOffsetMinutes(Date.UTC(2025, 0, 1), tz) / 60, jul = tzOffsetMinutes(Date.UTC(2025, 6, 1), tz) / 60;
+    const h = Math.min(jan, jul);
+    return { hours: h, dst: jan !== jul, name: `${tz.replace(/_/g, ' ')}, ${label(h)}` };
+  } catch { const h = Math.round(lon / 15); return { hours: h, dst: false, name: label(h) }; }
+}
+
 /** Rough standard-time offset from longitude (used when no zone is chosen). */
 export const guessOffsetHours = (lon) => Math.round(lon / 15);
 
@@ -235,6 +248,13 @@ export function solarSystem(jd) {
     sunRa: sunEq.ra, sunDec: sunEq.dec,
   });
   return out;
+}
+
+/** Sun's equatorial position (of date) for a Julian date. */
+export function sunEquatorial(jd) {
+  const d = jd - 2451543.5;
+  const sun = sunPosition(d);
+  return vecToRaDec(eclToEq(sun.r * cos(sun.lon), sun.r * sin(sun.lon), 0, d));
 }
 
 /** Julian day -> nice Moon phase name. */

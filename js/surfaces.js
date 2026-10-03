@@ -17,7 +17,7 @@ export const FONT_STACKS = {
 /** Standard PDF fonts are Latin-1 only: fold anything else to something printable. */
 const latin = (s) =>
   s.normalize('NFC')
-    .replace(/[\u2018\u2019\u2032]/g, "'").replace(/[\u201c\u201d\u2033]/g, '"').replace(/[\u2013\u2014]/g, '-')
+    .replace(/[\u2018\u2019\u2032]/g, "'").replace(/[\u201c\u201d\u2033]/g, '"').replace(/[\u2013\u2014\u2212]/g, '-')
     .replace(/[^\x20-\x7e\u00a0-\u00ff]/g, '?');
 
 const hexToRgb = (h) => {
@@ -266,10 +266,15 @@ export class PdfSurface extends Surface {
     this._op(st, evenodd);
   }
   rasterScale(boxMm) { return Math.min(6, 1800 / boxMm); }
+  newPage() {
+    this.doc.addPage([this.w, this.h], this.w > this.h ? 'landscape' : 'portrait');
+    this.stack = [];
+    this.cache = {};
+  }
   image(img, x, y, w, h) {
     this._alpha(1);
     const c = document.createElement('canvas');
-    c.width = img.width; c.height = img.height;
+    c.width = img.naturalWidth || img.width; c.height = img.naturalHeight || img.height;
     c.getContext('2d').drawImage(img, 0, 0);
     this.doc.addImage(c.toDataURL('image/png'), 'PNG', x, y, w, h, undefined, 'FAST');
   }

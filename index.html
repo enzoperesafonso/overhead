@@ -4,16 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Overhead — print the sky from any moment</title>
-  <meta name="description" content="Design a print-ready star map of any moment and place, then download it as a vector PDF. Free, private, runs entirely in your browser.">
+  <meta name="description" content="Design a print-ready star map poster of any moment and place, or a black-and-white planisphere to use outside, then download it as a vector PDF. Free, private, runs entirely in your browser.">
   <meta name="theme-color" content="#ffffff">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23191a1c'/%3E%3Cpath d='M16 6l2.2 6.6L25 13l-5.4 4 2 6.6L16 20l-5.6 3.6 2-6.6L7 13l6.8-.4z' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20120%20120%22%3E%3Ccircle%20cx=%2260%22%20cy=%2260%22%20r=%2260%22%20fill=%22%2315171c%22/%3E%3Cg%20transform=%22translate%2860%2060%29%20scale%28.8%29%20translate%28-60%20-60%29%22%20color=%22%23fff%22%3E%3Cg%20fill=%22none%22%20stroke=%22currentColor%22%20stroke-linecap=%22round%22%3E%3Ccircle%20cx=%2260%22%20cy=%2260%22%20r=%2252%22%20stroke-width=%225%22/%3E%3Ccircle%20cx=%2260%22%20cy=%2260%22%20r=%2234%22%20stroke-width=%223%22%20stroke-dasharray=%221%208%22/%3E%3Ccircle%20cx=%2260%22%20cy=%2260%22%20r=%2216%22%20stroke-width=%223%22/%3E%3C/g%3E%3Cpath%20d=%22M60%2034%20L65.5%2054.5%20L86%2060%20L65.5%2065.5%20L60%2086%20L54.5%2065.5%20L34%2060%20L54.5%2054.5%20Z%22%20fill=%22currentColor%22/%3E%3Ccircle%20cx=%2299%22%20cy=%2229%22%20r=%223.5%22%20fill=%22currentColor%22/%3E%3Ccircle%20cx=%2221%22%20cy=%2280%22%20r=%223%22%20fill=%22currentColor%22/%3E%3Ccircle%20cx=%2290%22%20cy=%2294%22%20r=%222.5%22%20fill=%22currentColor%22/%3E%3C/g%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <header class="bar">
-    <div class="brand"><svg width="18" height="18" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3l3.2 9.2L29 13l-7.6 6 2.8 9.4L16 22.6 7.8 28.4l2.8-9.4L3 13l9.8-.8z" fill="currentColor"/></svg><span>Overhead</span><span class="tag">Print the sky from any moment</span></div>
+    <div class="brand"><svg width="22" height="22" viewBox="0 0 120 120" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-linecap="round"><circle cx="60" cy="60" r="52" stroke-width="5"/><circle cx="60" cy="60" r="34" stroke-width="3" stroke-dasharray="1 8"/><circle cx="60" cy="60" r="16" stroke-width="3"/></g><path d="M60 34 L65.5 54.5 L86 60 L65.5 65.5 L60 86 L54.5 65.5 L34 60 L54.5 54.5 Z" fill="currentColor"/><circle cx="99" cy="29" r="3.5" fill="currentColor"/><circle cx="21" cy="80" r="3" fill="currentColor"/><circle cx="90" cy="94" r="2.5" fill="currentColor"/></svg><span>Overhead</span><span class="tag">Print the sky from any moment</span></div>
+    <div id="modes" role="group" aria-label="What to make">
+      <button type="button" data-type="poster">Poster</button>
+      <button type="button" data-type="planisphere"><span class="full">Planisphere</span><span class="short">Wheel</span></button>
+      <button type="button" data-type="zenith"><span class="full">Sky overhead</span><span class="short">Overhead</span></button>
+    </div>
     <div class="actions">
       <button id="btn-about" class="ghost" type="button">About</button>
+      <button id="btn-undo" class="ghost" type="button" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↶<span class="lbl"> Undo</span></button>
       <button id="btn-share" class="ghost" type="button" title="Copy a link that reopens this exact design">Copy link</button>
       <button id="btn-pdf" class="primary" type="button">Download PDF</button>
     </div>
@@ -23,6 +29,10 @@
     <aside id="panel" aria-label="Settings"><noscript>This app needs JavaScript.</noscript></aside>
     <section id="stage" aria-label="Preview">
       <div id="sheet"><canvas id="preview" aria-label="Star map preview"></canvas></div>
+      <div id="parts" role="group" aria-label="Chart page" hidden>
+        <button type="button" data-part="wheel">Star wheel</button>
+        <button type="button" data-part="cover">Cover</button>
+      </div>
       <div id="zoom" role="group" aria-label="Zoom">
         <button id="zoom-out" type="button" aria-label="Zoom out">−</button>
         <button id="zoom-fit" type="button" title="Fit to window"><span id="zoom-level">100%</span></button>
@@ -32,8 +42,26 @@
       <div id="busy" hidden>Working…</div>
     </section>
   </main>
+  <dialog id="welcome" aria-labelledby="welcome-title">
+    <h2 id="welcome-title">What would you like to make?</h2>
+    <div class="choices">
+      <button type="button" class="choice" data-choose="poster">
+        <strong>A poster</strong>
+        <span>A print-ready keepsake of a special night: a wedding, a birth, the night you met. Fully styled, with your own title.</span>
+      </button>
+      <button type="button" class="choice" data-choose="planisphere">
+        <strong>A planisphere</strong>
+        <span>A star wheel to cut out and use outside all year: turn it to any date and time to see what is overhead.</span>
+      </button>
+      <button type="button" class="choice" data-choose="zenith">
+        <strong>Tonight's sky</strong>
+        <span>A single chart of the sky straight overhead for one date, time and place, with the visible planets and the Moon.</span>
+      </button>
+    </div>
+    <p class="hint">You can switch any time from the top bar.</p>
+  </dialog>
   <dialog id="about" aria-labelledby="about-title">
-    <h2 id="about-title">About Overhead</h2>
+    <div class="about-head"><svg width="44" height="44" viewBox="0 0 120 120" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-linecap="round"><circle cx="60" cy="60" r="52" stroke-width="5"/><circle cx="60" cy="60" r="34" stroke-width="3" stroke-dasharray="1 8"/><circle cx="60" cy="60" r="16" stroke-width="3"/></g><path d="M60 34 L65.5 54.5 L86 60 L65.5 65.5 L60 86 L54.5 65.5 L34 60 L54.5 54.5 Z" fill="currentColor"/><circle cx="99" cy="29" r="3.5" fill="currentColor"/><circle cx="21" cy="80" r="3" fill="currentColor"/><circle cx="90" cy="94" r="2.5" fill="currentColor"/></svg><h2 id="about-title">About Overhead</h2></div>
     <div class="about-body"></div>
     <div class="about-foot"><button class="primary" type="button" data-close>Got it</button></div>
   </dialog>

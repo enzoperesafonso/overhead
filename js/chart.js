@@ -128,8 +128,8 @@ export function chartNotes(cfg) {
     far: g.south ? 'N' : 'S', // the compass point opposite the elevated pole
     howTo: [
       cfg.chartPocket
-        ? 'Cut out the star wheel (page 1) and the cover (page 2). Cut away the window, then fold the cover flap up and slide the wheel into the pocket.'
-        : 'Cut out the star wheel (page 1) and the cover (page 2). Cut away the window, then join them at the centre with a paper fastener.',
+        ? 'Cut out the star wheel (page 1) and the cover (page 2). Cut away the window, fold the cover flap up, slide the wheel into the pocket and tape the flap to the front.'
+        : 'Cut out the star wheel (page 1) and the cover (page 2). Cut away the window, then join them at the centre with a paper fastener. Laminating both pieces first keeps the hole from tearing.',
       "Turn the wheel until today's date meets the time you are observing, read from the hour scale on the cover.",
       `Hold it overhead and turn so the compass direction you face (${hemi}, E, ${g.south ? 'N' : 'S'} or W) is at the bottom. The window shows the sky.`,
       'Stars near the window edge are low in the sky; the centre is straight overhead.',
@@ -455,7 +455,7 @@ function drawCover(S, cfg, g, notes, opts) {
   const y0 = cy + g.Rw + 7 * sc;
   column(S, g.b + g.margin, y0, g.W - 2 * g.margin, [
     { text: 'COVER', size: 7.2, bold: true, tracking: 0.14, gap: 1.6 },
-    { text: 'Cut around the outer circle, then cut away the window along the dashed line. Fasten it over the star wheel at the centre dot. The cover is slightly smaller than the wheel so the date scale shows around the edge.', gap: 1.6 },
+    { text: 'Cut around the outer circle, then cut away the window along the dashed line. If you can, laminate the wheel and the cover first. Make a small hole at the centre dot of each and fasten the cover over the wheel with a paper fastener. The cover is slightly smaller than the wheel so the date scale shows around the edge.', gap: 1.6 },
     { text: `${notes.title} for latitude ${g.phi.toFixed(2)}°${notes.hemi}. ${notes.range} ${notes.time}`, alpha: 0.85, gap: 1 },
   ], sc, cfg.textColor, { font: cfg.bodyFont });
   footer(S, cfg, g, opts);

@@ -318,14 +318,13 @@ function drawWheel(S, cfg, g, notes, data, opts) {
 /** A view of S that draws everything rigidly turned half a turn about (cx, cy). */
 function rotated(S, cx, cy) {
   const P = ([x, y]) => [2 * cx - x, 2 * cy - y];
-  const flipAlign = (a) => (a === 'right' ? 'left' : a === 'center' ? 'center' : 'right');
   const over = {
     rect: (x, y, w, h, st, r) => S.rect(2 * cx - x - w, 2 * cy - y - h, w, h, st, r),
     circle: (x, y, r, st) => S.circle(2 * cx - x, 2 * cy - y, r, st),
     line: (x1, y1, x2, y2, st) => S.line(2 * cx - x1, 2 * cy - y1, 2 * cx - x2, 2 * cy - y2, st),
     poly: (rings, st, o) => S.poly(rings.map((r) => r.map(P)), st, o),
     clipPolygon: (pts) => S.clipPolygon(pts.map(P)),
-    text: (str, x, y, o = {}) => S.text(str, 2 * cx - x, 2 * cy - y, { ...o, rotate: (o.rotate || 0) + 180, align: flipAlign(o.align) }),
+    text: (str, x, y, o = {}) => S.text(str, 2 * cx - x, 2 * cy - y, { ...o, rotate: (o.rotate || 0) + 180 }),
   };
   return new Proxy(S, { get: (t, k) => (k in over ? over[k] : typeof t[k] === 'function' ? t[k].bind(t) : t[k]) });
 }

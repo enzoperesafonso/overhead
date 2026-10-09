@@ -15,48 +15,71 @@ const { D2R, R2D } = A;
 const rad = (deg) => deg * D2R;
 const dirVec = (deg) => [Math.sin(rad(deg)), -Math.cos(rad(deg))]; // 0° is up, clockwise, in page coordinates (y down)
 
-/** A tapering, fading streak from p0 along unit vector t. w(s) is the half-width and a(s) the opacity at s = 0..1 along the length. */
-function streak(S, [x, y], t, len, w, a, color, { bend = 0, steps = 40 } = {}) {
+/** A tapering, fading streak from p0 along unit vector t. w(s) is the half-width and a(s) the opacity at s = 0..1 along the length.
+ *  It is built from nested shapes, each reaching a little farther than the last, so the fade along the length is smooth and has no seams;
+ *  `layers` stacks narrower copies so the edges feather out instead of ending in a hard line. */
+function streak(S, [x, y], t, len, w, a, color, { bend = 0, levels = 44, layers = 1 } = {}) {
   const n = [-t[1], t[0]];
   const at = (s) => {
     const d = len * s, off = bend * len * s * s;
     return [x + t[0] * d + n[0] * off, y + t[1] * d + n[1] * off];
   };
-  let prev = at(0), pw = w(0);
-  for (let i = 1; i <= steps; i++) {
-    const s = i / steps, cur = at(s), cw = w(s);
-    const tl = [cur[0] - prev[0], cur[1] - prev[1]], tn = Math.hypot(tl[0], tl[1]) || 1;
-    const nn = [-tl[1] / tn, tl[0] / tn];
-    S.poly([[[prev[0] + nn[0] * pw, prev[1] + nn[1] * pw], [cur[0] + nn[0] * cw, cur[1] + nn[1] * cw], [cur[0] - nn[0] * cw, cur[1] - nn[1] * cw], [prev[0] - nn[0] * pw, prev[1] - nn[1] * pw]]], { fill: color, alpha: Math.max(0, a((i - 0.5) / steps)) }, { closed: true });
-    prev = cur; pw = cw;
+  const clampA = (v) => Math.min(0.97, Math.max(0, v));
+  for (let k = 0; k < layers; k++) {
+    const f = layers === 1 ? 1 : 1 - (k / layers) * 0.9; // width of this layer relative to the full width
+    const share = layers === 1 ? 1 : 1.5 / layers; // so the stacked layers add up to roughly the intended opacity at the centre
+    for (let j = 1; j <= levels; j++) {
+      const aIn = clampA(a((j - 1) / levels) * share), aOut = clampA(a(j / levels) * share);
+      const al = 1 - (1 - aIn) / (1 - aOut); // opacity this level must add so the total at each point matches a(s)
+      if (al <= 0.002) continue;
+      const upper = [], lower = [];
+      const m = Math.max(3, Math.round((j / levels) * 14));
+      for (let i = 0; i <= m; i++) {
+        const sv = (j / levels) * (i / m), c = at(sv), c2 = at(Math.min(1, sv + 0.01));
+        const tl = [c2[0] - c[0], c2[1] - c[1]], tn = Math.hypot(tl[0], tl[1]) || 1;
+        const nn = [-tl[1] / tn, tl[0] / tn], ww = w(sv) * f;
+        upper.push([c[0] + nn[0] * ww, c[1] + nn[1] * ww]);
+        lower.push([c[0] - nn[0] * ww, c[1] - nn[1] * ww]);
+      }
+      S.poly([[...upper, ...lower.reverse()]], { fill: color, alpha: al }, { closed: true });
+    }
   }
 }
 
-/** A comet: a bright head with a soft coma, a curved dust tail and a straight, narrow ion tail. */
+/** A comet: a compact bright head in a soft coma, a broad curved dust tail with feathered edges, and a thin, straight ion tail with fine streamers. */
 function drawComet(S, x, y, { size, tailAngle, tailLen, color, mono, bg }) {
   const rc = size;
-  const t = dirVec(tailAngle);
-  const ion = mono ? color : color;
-  const dust = mono ? color : lerpColor(color, '#ffe3a8', 0.65);
-  const glow = mono ? color : lerpColor(color, '#ffffff', 0.55);
-  streak(S, [x, y], t, tailLen * 0.78, (s) => rc * (0.45 + 2.4 * s), (s) => (mono ? 0.18 : 0.3) * (1 - s) ** 1.5, dust, { bend: 0.26 });
-  streak(S, [x, y], t, tailLen, (s) => rc * (0.22 + 0.5 * s), (s) => (mono ? 0.5 : 0.62) * (1 - s) ** 1.7, ion);
-  for (let j = 24; j >= 1; j--) S.circle(x, y, rc * (0.55 + 2.2 * (j / 24)), { fill: glow, alpha: (mono ? 0.035 : 0.05) + (mono ? 0.1 : 0.2) * (1 - j / 24) ** 2 });
-  if (mono) S.circle(x, y, rc * 0.5, { fill: bg });
-  S.circle(x, y, rc * (mono ? 0.36 : 0.4), { fill: mono ? color : '#ffffff' });
+  const ion = color;
+  const dust = mono ? color : lerpColor(color, '#ffe6b0', 0.72);
+  const glow = mono ? color : lerpColor(color, '#ffffff', 0.62);
+  const ramp = (s) => Math.min(1, s * 10); // tails build up from the coma rather than starting at full strength
+  const tdir = (off) => dirVec(tailAngle + off);
+  // dust: broad, curved, and warm
+  streak(S, [x, y], tdir(0), tailLen * 0.62, (s) => rc * (0.8 + 3.4 * s), (s) => (mono ? 0.55 : 0.95) * ramp(s) * (1 - s) ** 1.2, dust, { bend: 0.3, layers: 8 });
+  streak(S, [x, y], tdir(0), tailLen * 0.9, (s) => rc * (0.6 + 2.0 * s), (s) => (mono ? 0.3 : 0.5) * ramp(s) * (1 - s) ** 1.5, dust, { bend: 0.18, layers: 6 });
+  // ion: narrow, straight, bluish, with a few fine streamers
+  streak(S, [x, y], tdir(0), tailLen, (s) => rc * (0.2 + 0.32 * s), (s) => (mono ? 0.7 : 0.9) * ramp(s) * (1 - s) ** 1.25, ion, { layers: 5 });
+  [[-7, 0.78, 0.05], [-3.5, 0.95, -0.02], [3, 0.86, 0.03], [7.5, 0.62, -0.05]].forEach(([off, ln, bend]) => {
+    streak(S, [x, y], tdir(off), tailLen * ln, (s) => rc * (0.06 + 0.1 * s), (s) => (mono ? 0.3 : 0.4) * ramp(s) * (1 - s) ** 1.5, ion, { bend, layers: 2 });
+  });
+  // coma: a halo that falls away smoothly, a brighter inner coma, then a small hard nucleus
+  for (let j = 30; j >= 1; j--) {
+    const q = j / 30;
+    S.circle(x, y, rc * (0.3 + 2.1 * q), { fill: glow, alpha: (mono ? 0.025 : 0.035) + (mono ? 0.07 : 0.11) * (1 - q) ** 2.5 });
+  }
+  for (let j = 10; j >= 1; j--) S.circle(x, y, rc * (0.2 + 0.7 * (j / 10)), { fill: glow, alpha: mono ? 0.05 : 0.12 });
+  if (mono) S.circle(x, y, rc * 0.42, { fill: bg });
+  S.circle(x, y, rc * (mono ? 0.3 : 0.24), { fill: mono ? color : '#ffffff' });
 }
 
 /** A shooting star: a bright head with a tail that tapers away behind it as it moves along `dir`. */
 function drawShootingStar(S, x, y, { size, dir, len, color }) {
   const back = dirVec(dir + 180);
   const w0 = size * 0.5;
-  streak(S, [x, y], back, len, (s) => w0 * (1 - s) ** 0.8 + 0.02, (s) => 0.9 * (1 - s) ** 1.6, color, { steps: 36 });
-  streak(S, [x, y], back, len * 0.35, (s) => w0 * 2.2 * (1 - s) + 0.02, (s) => 0.22 * (1 - s) ** 1.2, color, { steps: 12 });
+  streak(S, [x, y], back, len, (s) => w0 * (1 - s) ** 0.8 + 0.02, (s) => 0.9 * (1 - s) ** 1.6, color, { levels: 36 });
+  streak(S, [x, y], back, len * 0.35, (s) => w0 * 2.2 * (1 - s) + 0.02, (s) => 0.22 * (1 - s) ** 1.2, color, { levels: 12 });
   for (let j = 8; j >= 1; j--) S.circle(x, y, w0 * (1.1 + 3.2 * (j / 8)), { fill: color, alpha: 0.05 + 0.3 * (1 - j / 8) ** 2 });
   S.circle(x, y, w0 * 1.05, { fill: '#ffffff' });
-  const k = w0 * 5.5; // faint four-point sparkle
-  S.line(x - k, y, x + k, y, { stroke: color, lw: 0.12, alpha: 0.55, cap: 'round' });
-  S.line(x, y - k, x, y + k, { stroke: color, lw: 0.12, alpha: 0.55, cap: 'round' });
 }
 
 export function pageDims(cfg) {

@@ -24,6 +24,7 @@ const MONO = {
   pageBg: '#ffffff', bgMode: 'solid', bg1: '#ffffff', bg2: '#ffffff', starMode: 'single', starColor: '#000000', starSat: 0, starStyle: 'dot',
   fadeFaint: false, lineColor: '#000000', lineAlpha: 0.7, lineWidth: 0.12, labelColor: '#000000', gridColor: '#000000', gridAlpha: 0.35,
   ringColor: '#000000', textColor: '#000000', mwColor: '#000000', moonColor: '#ffffff', moonDark: '#000000', moonStroke: '#000000',
+  credit: true, // the small Overhead credit is always printed on charts
   dust: false, planetColors: false, mono: true, // the Milky Way stays available, as a soft grey wash
 };
 export const monoCfg = (cfg) => ({ ...cfg, ...MONO });

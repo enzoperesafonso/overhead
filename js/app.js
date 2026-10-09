@@ -155,11 +155,11 @@ const C = {
     const sync = () => btns.forEach((b, i) => b.setAttribute('aria-pressed', String(cfg[key] === options[i][0])));
     return reg(h('div', { class: 'row' }, h('div', { class: 'lab' }, label), h('div', { class: 'seg' }, btns)), sync, show);
   },
-  color(key, label, { show } = {}) {
+  color(key, label, { show, fallback } = {}) { // fallback: another setting whose colour is used while this one is empty
     const id = 'f' + uid++;
     const inp = h('input', { id, type: 'color' });
     inp.addEventListener('input', () => set(key, inp.value));
-    return reg(h('div', { class: 'row' }, h('label', { for: id }, label), inp), () => (inp.value = cfg[key]), show);
+    return reg(h('div', { class: 'row' }, h('label', { for: id }, label), inp), () => (inp.value = cfg[key] || cfg[fallback] || '#ffffff'), show);
   },
   sub: (t, show) => reg(h('div', { class: 'sub' }, t), null, show),
   hint: (t, show) => reg(h('p', { class: 'hint' }, t), null, show),
@@ -211,6 +211,7 @@ for (const n of ['text', 'num', 'input', 'range', 'toggle', 'select', 'seg', 'co
 
 const POSTER = (c) => c.mode !== 'chart';
 const CHART = (c) => c.mode === 'chart';
+const HASSKY = (c) => POSTER(c) || c.chartKind === 'zenith'; // posters and the sky-overhead chart can carry a comet
 /** Show an element in one mode only. */
 const only = (visible, el) => reg(el, null, visible);
 const grp = (...kids) => h('div', { class: 'grp' }, kids);
@@ -513,6 +514,21 @@ panel.replaceChildren(
     C.toggle('sun', 'Sun', { show: POSTER }),
     C.range('sunSize', 'Sun size', 0.5, 4, 0.1, { show: (c) => POSTER(c) && c.sun, fmt: (v) => v.toFixed(1) + '×' }),
     C.toggle('planetLabels', 'Label planets, Sun & Moon', { show: (c) => POSTER(c) && (c.planets || c.moon || c.sun) }),
+    C.sub('Special symbols', (c) => POSTER(c) || c.chartKind === 'zenith'),
+    C.toggle('comet', 'Comet', { show: HASSKY }),
+    C.text('cometName', 'Comet name (optional)', { show: (c) => HASSKY(c) && c.comet }),
+    C.range('cometAngle', 'Comet position, around', 0, 360, 1, { show: (c) => HASSKY(c) && c.comet, fmt: (v) => v + '°' }),
+    C.range('cometDist', 'Comet position, from centre', 0, 95, 1, { show: (c) => HASSKY(c) && c.comet, fmt: (v) => v + '%' }),
+    C.range('cometSize', 'Comet size', 0.4, 4, 0.1, { show: (c) => HASSKY(c) && c.comet, fmt: (v) => v.toFixed(1) + '×' }),
+    C.range('cometTail', 'Tail length', 0.2, 3, 0.1, { show: (c) => HASSKY(c) && c.comet, fmt: (v) => v.toFixed(1) + '×' }),
+    C.range('cometTailAngle', 'Tail direction', 0, 360, 1, { show: (c) => HASSKY(c) && c.comet, fmt: (v) => v + '°' }),
+    C.color('cometColor', 'Comet colour', { show: (c) => POSTER(c) && c.comet, fallback: 'starColor' }),
+    C.toggle('shootingStar', 'Shooting star', { show: POSTER }),
+    C.range('ssAngle', 'Shooting star position, around', -180, 180, 1, { show: (c) => POSTER(c) && c.shootingStar, fmt: (v) => v + '°' }),
+    C.range('ssDist', 'Shooting star position, from centre', 0, 95, 1, { show: (c) => POSTER(c) && c.shootingStar, fmt: (v) => v + '%' }),
+    C.range('ssDir', 'Direction of travel', 0, 360, 1, { show: (c) => POSTER(c) && c.shootingStar, fmt: (v) => v + '°' }),
+    C.range('ssSize', 'Shooting star size', 0.4, 4, 0.1, { show: (c) => POSTER(c) && c.shootingStar, fmt: (v) => v.toFixed(1) + '×' }),
+    C.color('ssColor', 'Shooting star colour', { show: (c) => POSTER(c) && c.shootingStar, fallback: 'starColor' }),
     C.toggle('dsos', 'Deep-sky objects (Messier)'),
     C.range('dsoMag', 'Object magnitude limit', 4, 12, 0.5, { show: (c) => c.dsos, fmt: (v) => v.toFixed(1) }),
     C.toggle('dsoLabels', 'Label Messier numbers', { show: (c) => c.dsos }),

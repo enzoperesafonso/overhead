@@ -10,6 +10,55 @@ import { loreFor } from './lore.js';
 const PT = 25.4 / 72;
 const { D2R, R2D } = A;
 
+
+// ---------- comet and shooting star
+const rad = (deg) => deg * D2R;
+const dirVec = (deg) => [Math.sin(rad(deg)), -Math.cos(rad(deg))]; // 0° is up, clockwise, in page coordinates (y down)
+
+/** A tapering, fading streak from p0 along unit vector t. w(s) is the half-width and a(s) the opacity at s = 0..1 along the length. */
+function streak(S, [x, y], t, len, w, a, color, { bend = 0, steps = 40 } = {}) {
+  const n = [-t[1], t[0]];
+  const at = (s) => {
+    const d = len * s, off = bend * len * s * s;
+    return [x + t[0] * d + n[0] * off, y + t[1] * d + n[1] * off];
+  };
+  let prev = at(0), pw = w(0);
+  for (let i = 1; i <= steps; i++) {
+    const s = i / steps, cur = at(s), cw = w(s);
+    const tl = [cur[0] - prev[0], cur[1] - prev[1]], tn = Math.hypot(tl[0], tl[1]) || 1;
+    const nn = [-tl[1] / tn, tl[0] / tn];
+    S.poly([[[prev[0] + nn[0] * pw, prev[1] + nn[1] * pw], [cur[0] + nn[0] * cw, cur[1] + nn[1] * cw], [cur[0] - nn[0] * cw, cur[1] - nn[1] * cw], [prev[0] - nn[0] * pw, prev[1] - nn[1] * pw]]], { fill: color, alpha: Math.max(0, a((i - 0.5) / steps)) }, { closed: true });
+    prev = cur; pw = cw;
+  }
+}
+
+/** A comet: a bright head with a soft coma, a curved dust tail and a straight, narrow ion tail. */
+function drawComet(S, x, y, { size, tailAngle, tailLen, color, mono, bg }) {
+  const rc = size;
+  const t = dirVec(tailAngle);
+  const ion = mono ? color : color;
+  const dust = mono ? color : lerpColor(color, '#ffe3a8', 0.65);
+  const glow = mono ? color : lerpColor(color, '#ffffff', 0.55);
+  streak(S, [x, y], t, tailLen * 0.78, (s) => rc * (0.45 + 2.4 * s), (s) => (mono ? 0.18 : 0.3) * (1 - s) ** 1.5, dust, { bend: 0.26 });
+  streak(S, [x, y], t, tailLen, (s) => rc * (0.22 + 0.5 * s), (s) => (mono ? 0.5 : 0.62) * (1 - s) ** 1.7, ion);
+  for (let j = 24; j >= 1; j--) S.circle(x, y, rc * (0.55 + 2.2 * (j / 24)), { fill: glow, alpha: (mono ? 0.035 : 0.05) + (mono ? 0.1 : 0.2) * (1 - j / 24) ** 2 });
+  if (mono) S.circle(x, y, rc * 0.5, { fill: bg });
+  S.circle(x, y, rc * (mono ? 0.36 : 0.4), { fill: mono ? color : '#ffffff' });
+}
+
+/** A shooting star: a bright head with a tail that tapers away behind it as it moves along `dir`. */
+function drawShootingStar(S, x, y, { size, dir, len, color }) {
+  const back = dirVec(dir + 180);
+  const w0 = size * 0.5;
+  streak(S, [x, y], back, len, (s) => w0 * (1 - s) ** 0.8 + 0.02, (s) => 0.9 * (1 - s) ** 1.6, color, { steps: 36 });
+  streak(S, [x, y], back, len * 0.35, (s) => w0 * 2.2 * (1 - s) + 0.02, (s) => 0.22 * (1 - s) ** 1.2, color, { steps: 12 });
+  for (let j = 8; j >= 1; j--) S.circle(x, y, w0 * (1.1 + 3.2 * (j / 8)), { fill: color, alpha: 0.05 + 0.3 * (1 - j / 8) ** 2 });
+  S.circle(x, y, w0 * 1.05, { fill: '#ffffff' });
+  const k = w0 * 5.5; // faint four-point sparkle
+  S.line(x - k, y, x + k, y, { stroke: color, lw: 0.12, alpha: 0.55, cap: 'round' });
+  S.line(x, y - k, x, y + k, { stroke: color, lw: 0.12, alpha: 0.55, cap: 'round' });
+}
+
 export function pageDims(cfg) {
   let [w, h] = cfg.pageSize === 'Custom' ? [cfg.customW, cfg.customH] : PAGE_SIZES[cfg.pageSize] || PAGE_SIZES.A4;
   if (cfg.pageSize !== 'Custom') {
@@ -508,6 +557,21 @@ export function renderPoster(S, cfg, data, opts = {}) {
         if (cfg.planetLabels) dsoDraw.push({ x: bd.x + r + 0.9, y: bd.y + labelPt * PT * 0.3, t: 'MOON', planet: true });
       }
     }
+  }
+
+  // ---------- comet and shooting star
+  const polar = (angDeg, distPct) => [cx + (distPct / 100) * R * Math.sin(angDeg * D2R), cy - (distPct / 100) * R * Math.cos(angDeg * D2R)];
+  if (cfg.comet) {
+    const [x, y] = polar(cfg.cometAngle, cfg.cometDist);
+    const col = cfg.mono ? '#000000' : cfg.cometColor || cfg.starColor;
+    const size = 2.1 * sc * cfg.cometSize;
+    drawComet(S, x, y, { size, tailAngle: cfg.cometTailAngle, tailLen: 40 * sc * cfg.cometSize * cfg.cometTail, color: col, mono: cfg.mono, bg: cfg.pageBg });
+    meta.comet = { x, y };
+    if (cfg.cometName) dsoDraw.push({ x: x + size * 2.6, y: y + labelPt * PT * 0.3, t: cfg.cometName.toUpperCase(), planet: true });
+  }
+  if (cfg.shootingStar && !cfg.mono) {
+    const [x, y] = polar(cfg.ssAngle, cfg.ssDist);
+    drawShootingStar(S, x, y, { size: 0.55 * sc * cfg.ssSize, dir: cfg.ssDir, len: 30 * sc * cfg.ssSize, color: cfg.ssColor || cfg.starColor });
   }
 
   // ---------- labels

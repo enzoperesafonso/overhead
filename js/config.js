@@ -168,6 +168,20 @@ export const DEFAULTS = {
   sunSize: 1,
   moon: false,
   moonSize: 1,
+  comet: false,
+  cometAngle: 50, // where the head sits: bearing from the centre (0° = up) and distance as a percentage of the radius
+  cometDist: 55,
+  cometSize: 1,
+  cometTail: 1,
+  cometTailAngle: 225, // the way the tail points (0° = up, clockwise)
+  cometColor: '', // empty = the star colour
+  cometName: '',
+  shootingStar: false,
+  ssAngle: -40,
+  ssDist: 62,
+  ssDir: 120, // the way it is travelling
+  ssSize: 1,
+  ssColor: '',
   dsos: false,
   dsoMag: 8,
   dsoLabels: true,

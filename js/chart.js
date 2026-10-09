@@ -298,6 +298,8 @@ function drawWheel(S, cfg, g, notes, data, opts) {
     S.text(name, x, y, { font: 'sans', size: fs, color: col, bold: true, tracking: 0.12, align: 'center', rotate: top ? th : th + 180 });
   });
   if (!g.pocket) S.circle(cx, cy, 0.9 * sc, { fill: col }); // pivot
+  stepLabel(S, g, col, 1, 'Cut out along the outer circle', g.b + 7 * sc, g.b + 13 * sc, { maxW: 56 * sc });
+  stepLabel(S, g, col, 2, g.pocket ? 'Slide it into the cover pocket (page 2)' : 'Join it to the cover (page 2) at the centre dot', g.b + g.W - 7 * sc - 56 * sc, g.b + 13 * sc, { maxW: 56 * sc });
 
   // text under the wheel
   const left = cfg.howTo ? [{ text: 'HOW TO USE', size: 7.2, bold: true, tracking: 0.14, gap: 1.6 }, ...notes.howTo.map((t, i) => ({ text: t, bullet: `${i + 1}.`, gap: 1.3 }))] : [];
@@ -314,6 +316,20 @@ function drawWheel(S, cfg, g, notes, data, opts) {
 }
 
 // ------------------------------------------------------------------ cover with the horizon window
+
+/** A numbered step marker with a short caption, wrapped to maxW. The badge sits on the first line; `center` centres it on x. */
+function stepLabel(S, g, ink, n, str, x, y, { size = 4.6, maxW = 1e9, center = false } = {}) {
+  const sc = g.sc;
+  const o = { font: 'sans', size: size * sc, color: ink, bold: true, tracking: 0.1 };
+  const d = size * sc * PT * 1.65, gap = 1.8 * sc;
+  const lines = wrap(S, str.toUpperCase(), maxW - d - gap, o);
+  const wide = Math.max(...lines.map((l) => S.textWidth(l, o)));
+  const x0 = center ? x - (d + gap + wide) / 2 : x;
+  const cyb = y - size * sc * PT * 0.36;
+  S.circle(x0 + d / 2, cyb, d / 2, { stroke: ink, lw: 0.3 * sc });
+  S.text(String(n), x0 + d / 2, cyb + size * sc * PT * 0.36, { ...o, size: size * sc * 0.95, align: 'center', tracking: 0 });
+  lines.forEach((ln, i) => S.text(ln, x0 + d + gap, y + i * size * sc * PT * 1.35, { ...o, align: 'left' }));
+}
 
 /** A view of S that draws everything rigidly turned half a turn about (cx, cy). */
 function rotated(S, cx, cy) {
@@ -336,7 +352,14 @@ function drawPocket(S, g, ink) {
   const hood = Array.from({ length: 91 }, (_, i) => { const a = -Math.PI / 2 + (Math.PI * i) / 90; return [cx + Rs * Math.sin(a), cy - Rs * Math.cos(a)]; });
   S.poly([[...hood, [cx + Wp, cy], [cx + Wp, yF + Hf], [cx - Wp, yF + Hf], [cx - Wp, cy]]], { fill: '#ffffff', stroke: ink, lw: 0.45 * sc }, { closed: true });
   S.line(cx - Wp, yF, cx + Wp, yF, { stroke: ink, lw: 0.2 * sc, dash: [0.8 * sc, 1.1 * sc], alpha: 0.8 });
-  S.text('FOLD UP BEHIND THE WHEEL', cx, yF + 4.2 * sc, { font: 'sans', size: 4.4 * sc, color: ink, bold: true, tracking: 0.14, align: 'center' });
+  stepLabel(S, g, ink, 3, 'Fold up behind the wheel', cx, yF + 5 * sc, { center: true });
+  stepLabel(S, g, ink, 4, 'Slide the wheel in from the top, then tape the flap to the front', cx, yF - 8 * sc, { center: true, maxW: 2 * Wp - 30 * sc });
+  stepLabel(S, g, ink, 1, 'Cut out along the solid line', g.b + 7 * sc, g.b + 13 * sc, { maxW: 62 * sc });
+  const yLow = g.b + 32 * sc, edge = Math.sqrt(Math.max(0, Rs * Rs - (cy - yLow) ** 2)), wR = g.b + g.W - 7 * sc - (cx + edge) - 4 * sc;
+  if (wR > 26 * sc) {
+    const o = { font: 'sans', size: 4.6 * sc, color: ink, alpha: 0.75, tracking: 0.04 };
+    wrap(S, "Off-cut. The wheel's date ring shows round the hood.", wR, o).forEach((ln, i) => S.text(ln, cx + edge + 4 * sc, g.b + 13 * sc + i * 4.6 * sc * PT * 1.35, { ...o, align: 'left' }));
+  }
   for (const sx of [-1, 1]) { // glue or tape the flap to the front along these strips
     const x0 = sx < 0 ? cx - Wp : cx + Wp - 7 * sc;
     S.rect(x0, cy + 6 * sc, 7 * sc, yF - cy - 6 * sc, { stroke: ink, lw: 0.15 * sc, dash: [0.8 * sc, 1.1 * sc], alpha: 0.6 });
@@ -401,6 +424,10 @@ function drawCover(S, cfg, g, notes, opts) {
   G.line(z[0] - 1.6 * sc, z[1], z[0] + 1.6 * sc, z[1], { stroke: ink, lw: 0.2 * sc });
   G.line(z[0], z[1] - 1.6 * sc, z[0], z[1] + 1.6 * sc, { stroke: ink, lw: 0.2 * sc });
   upright('overhead', z[0] + 2.2 * sc, z[1], 1.2 * sc, { font: 'sans', size: 4.6 * sc, color: ink, italic: true });
+  if (g.pocket) { // cut-away instruction inside the window itself
+    const wy = win.reduce((a, p) => a + p[1], 0) / win.length;
+    stepLabel(S, g, ink, 2, 'Cut out the window along the dashed line', cx, 2 * cy - wy + 14 * sc, { center: true, maxW: 90 * sc });
+  }
   G.restore();
   if (!g.pocket) {
     G.circle(cx, cy, 0.9 * sc, { fill: ink });
@@ -435,7 +462,10 @@ function drawCover(S, cfg, g, notes, opts) {
     const fw = 2 * g.Wp - 16 * sc, fy = g.yF + 8 * sc, fyMax = g.yF + g.Hf - 3 * sc;
     const flapLines = (kk) => [
       { text: 'COVER WITH POCKET', size: 7.2 * kk, bold: true, tracking: 0.14, gap: 1.4 },
-      { text: 'Cut out along the solid line. Cut away the horizon window along its dashed line. Lay the cover face down and fold the flap up along the dotted line. Slide the star wheel in from the top, date ring outwards, then tape or glue the flap to the front along the two strips. The wheel now turns freely and no pin is needed.', size: 6.4 * kk, gap: 1.6 },
+      { text: 'Cut out along the solid line.', bullet: '1.', size: 6.4 * kk, gap: 0.6 },
+      { text: 'Cut out the horizon window along its dashed line.', bullet: '2.', size: 6.4 * kk, gap: 0.6 },
+      { text: 'Lay the cover face down and fold the flap up along the dotted line.', bullet: '3.', size: 6.4 * kk, gap: 0.6 },
+      { text: 'Slide the star wheel in from the top, date ring outwards, then tape or glue the flap to the front along the two strips. The wheel now turns freely and no pin is needed.', bullet: '4.', size: 6.4 * kk, gap: 1.8 },
       ...howTo(kk).map((b) => ({ ...b, size: b.size * 1.05 })),
       { text: `${notes.title} for latitude ${g.phi.toFixed(2)}°${notes.hemi}. ${notes.range} ${notes.time}`, size: 6 * kk, alpha: 0.85, gap: 1.4 },
     ];

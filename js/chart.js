@@ -424,9 +424,11 @@ function drawCover(S, cfg, g, notes, opts) {
   const credit = (k) => (cfg.credit ? [{ text: 'Made with Overhead · github.com/enzoperesafonso/overhead', size: 5 * k, gap: 0, alpha: 0.8 }] : []);
   if (g.pocket) {
     // the solid part of the hood above the window holds the title; the rest goes on the back flap
-    const yS = cy - Rh + 9 * sc, yE = 2 * cy - winBottom - 4 * sc;
+    const yL = cy - Rh + 9 * sc, yE = 2 * cy - winBottom - 4 * sc;
+    const yS = yL + (logo ? logoH + 3 * sc : 0); // the logo sits on the face of the hood, above the title
     let k = 1;
     while (k > 0.5 && column(S, cx, yS, widthAt, title(k), sc, ink, { center: true, dry: true, font: cfg.bodyFont }) > yE) k -= 0.05;
+    if (logo && yE - yL > logoH + 12 * sc) drawLogo(S, g, logo, cx, yL, logoH, 'center');
     if (yE - yS > 6 * sc) column(S, cx, yS, widthAt, title(k), sc, ink, { center: true, font: cfg.bodyFont });
     const fw = 2 * g.Wp - 16 * sc, fy = g.yF + 8 * sc, fyMax = g.yF + g.Hf - 3 * sc;
     const flapLines = (kk) => [

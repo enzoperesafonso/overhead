@@ -15,6 +15,7 @@ Made by [Enzo Afonso](https://github.com/enzoperesafonso).
 ## Features
 - Real sky for any date, time, time zone and location (precession, planets, Sun, Moon with phase, Milky Way).
 - Limiting magnitude (up to 8), star size/contrast, realistic star colours, glow or spikes, atmospheric dimming.
+- Special symbols you can place and style yourself: a **comet** (glowing head, dust and ion tails; size, tail, colour, position and an optional name) on posters and the sky-overhead chart, and a **shooting star** on posters.
 - Constellation lines, names (Latin or abbreviation), IAU boundaries, Messier objects, named stars.
 - Alt-az and RA/Dec grids, ecliptic, celestial equator, degree/compass borders, 4 projections, field of view, rotation, mirror.
 - 11 themes plus full colour control; shapes: circle, square, rounded, arch, hexagon, heart, full page.

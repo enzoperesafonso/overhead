@@ -264,7 +264,7 @@ function drawWheel(S, cfg, g, notes, data, opts) {
   const wcfg = {
     ...cfg, frame: 'pole', fov: g.psiMax, projection: g.projection, belowHorizon: true, rotation: 0, mirror: false, extinction: false,
     shape: 'circle', ring: 'none', pageBorder: 'none', orientation: 'portrait', title: '', subtitle: '', footer: '',
-    showDate: false, showPlace: false, showCoords: false, planets: false, sun: false, moon: false,
+    showDate: false, showPlace: false, showCoords: false, planets: false, sun: false, moon: false, comet: false, shootingStar: false,
     chartSize: ((2 * g.Rs) / g.W) * 100, chartTop: ((g.cy - g.b - g.Rs) / g.H) * 100, textPos: 'below', textGap: 0,
   };
   renderPoster(S, wcfg, data);

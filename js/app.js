@@ -390,7 +390,7 @@ function startSection() {
   return section('Start', true,
     typeNote(),
     C.sub('1 · Place and moment'),
-    only(POSTER, C.text('title', 'Title')),
+    only(POSTER, C.text('title', 'Title (up to 3 lines)', { area: true, placeholder: 'Press Enter to start a new line' })),
     only(CHART, C.text('chartTitle', 'Title', { placeholder: 'Leave blank for the default title' })),
     placeControl(),
     C.text('placeName', 'Location label'),
@@ -507,7 +507,9 @@ panel.replaceChildren(
     C.range('mwOpacity', 'Milky Way strength', 0.2, 3, 0.1, { show: (c) => c.milkyWay, fmt: (v) => v.toFixed(1) }),
     C.toggle('planets', 'Planets', { show: POSTER }),
     C.toggle('moon', 'Moon with phase', { show: POSTER }),
+    C.range('moonSize', 'Moon size', 0.5, 4, 0.1, { show: (c) => POSTER(c) && c.moon, fmt: (v) => v.toFixed(1) + '×' }),
     C.toggle('sun', 'Sun', { show: POSTER }),
+    C.range('sunSize', 'Sun size', 0.5, 4, 0.1, { show: (c) => POSTER(c) && c.sun, fmt: (v) => v.toFixed(1) + '×' }),
     C.toggle('planetLabels', 'Label planets, Sun & Moon', { show: (c) => POSTER(c) && (c.planets || c.moon || c.sun) }),
     C.toggle('dsos', 'Deep-sky objects (Messier)'),
     C.range('dsoMag', 'Object magnitude limit', 4, 12, 0.5, { show: (c) => c.dsos, fmt: (v) => v.toFixed(1) }),
@@ -757,7 +759,7 @@ const exportPdf = () => withBusy('Building PDF…', async () => {
   await Promise.all([loadPdfLib(), prep()]);
   const { W, H } = pageFor();
   const b = cfg.bleed;
-  const S = new PdfSurface(window.jspdf.jsPDF, W + 2 * b, H + 2 * b, { title: isChart() ? 'Planisphere' : cfg.title || 'Star map', customFont });
+  const S = new PdfSurface(window.jspdf.jsPDF, W + 2 * b, H + 2 * b, { title: isChart() ? 'Planisphere' : cfg.title.replace(/\s*\n\s*/g, ' ') || 'Star map', customFont });
   paint(S, 'wheel');
   if (twoPage()) { S.newPage(); paint(S, 'cover'); }
   download(S.blob(), `${fileBase()}.pdf`);
@@ -766,7 +768,7 @@ const exportSvg = () => withBusy('Building SVG…', async () => {
   await prep();
   const { W, H } = pageFor();
   const b = cfg.bleed;
-  const S = new SvgSurface(W + 2 * b, H + 2 * b, { title: cfg.title || 'Star map' });
+  const S = new SvgSurface(W + 2 * b, H + 2 * b, { title: cfg.title.replace(/\s*\n\s*/g, ' ') || 'Star map' });
   paint(S, cfg.chartPart);
   download(new Blob([S.toString()], { type: 'image/svg+xml' }), `${fileBase()}${twoPage() ? '-' + cfg.chartPart : ''}.svg`);
 });

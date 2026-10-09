@@ -150,7 +150,8 @@ export function renderPoster(S, cfg, data, opts = {}) {
   const up = (s) => (cfg.uppercase ? s.toUpperCase() : s);
   const lines = [];
   const bodyO = { font: cfg.bodyFont, size: cfg.bodySize * sc0, tracking: cfg.bodyTracking, color: cfg.textColor };
-  if (cfg.title) lines.push({ t: up(cfg.title), o: { font: cfg.titleFont, size: cfg.titleSize * sc0, tracking: cfg.titleTracking, bold: cfg.titleBold, color: cfg.textColor }, after: 1.5 });
+  const titleLines = cfg.title.split('\n').map((t) => t.trim()).filter(Boolean).slice(0, 3);
+  titleLines.forEach((t, i) => lines.push({ t: up(t), o: { font: cfg.titleFont, size: cfg.titleSize * sc0, tracking: cfg.titleTracking, bold: cfg.titleBold, color: cfg.textColor }, after: i < titleLines.length - 1 ? 0.5 : 1.5 }));
   if (cfg.subtitle) lines.push({ t: up(cfg.subtitle), o: { ...bodyO, size: cfg.bodySize * sc0 * 1.25, font: cfg.titleFont }, after: 1 });
   if (lines.length) lines[lines.length - 1].after = 2.3;
   const bodyLines = [];
@@ -484,13 +485,13 @@ export function renderPoster(S, cfg, data, opts = {}) {
         meta.planets.push(bd.name);
         if (cfg.planetLabels) dsoDraw.push({ x: bd.x + r * 2.3 + 0.8, y: bd.y + labelPt * PT * 0.3, t: bd.name.toUpperCase(), planet: true });
       } else if (bd.kind === 'sun') {
-        const r = 2.4 * sc;
+        const r = 2.4 * sc * cfg.sunSize;
         const st = { stroke: '#ffcf4a', lw: 0.2 * lineSc, cap: 'round' };
         for (let i = 0; i < 12; i++) { const a = (i * 30) * D2R; S.line(bd.x + Math.cos(a) * r * 1.35, bd.y + Math.sin(a) * r * 1.35, bd.x + Math.cos(a) * r * 2, bd.y + Math.sin(a) * r * 2, st); }
         S.circle(bd.x, bd.y, r, { fill: '#ffd85e' });
         if (cfg.planetLabels) dsoDraw.push({ x: bd.x + r * 2.2, y: bd.y + labelPt * PT * 0.3, t: 'SUN', planet: true });
       } else if (bd.kind === 'moon') {
-        const r = 3.4 * sc;
+        const r = 3.4 * sc * cfg.moonSize;
         const sunV = apply(Mdate, A.eqToVec(bd.sunRa, bd.sunDec));
         const t = norm3([sunV[0] - dot3(sunV, bd.hv) * bd.hv[0], sunV[1] - dot3(sunV, bd.hv) * bd.hv[1], sunV[2] - dot3(sunV, bd.hv) * bd.hv[2]]);
         const near = P.xy(norm3([bd.hv[0] + 0.02 * t[0], bd.hv[1] + 0.02 * t[1], bd.hv[2] + 0.02 * t[2]]));

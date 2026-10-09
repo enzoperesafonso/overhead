@@ -614,7 +614,7 @@ about.querySelector('.about-body').replaceChildren(
       h('li', {}, 'Stars, constellations, Milky Way and deep-sky data: ', link('https://github.com/ofrohn/d3-celestial', 'd3-celestial'), ' by Olaf Frohn (BSD-3-Clause), derived from the Hipparcos catalogue.'),
       h('li', {}, 'Southern African star names: compiled from published ethnoastronomy, chiefly the ', link('https://assa.saao.ac.za/astronomy-in-south-africa/ethnoastronomy/', 'ASSA African Ethnoastronomy page'), ' and Royal Museums Greenwich\'s ', link('https://www.rmg.co.uk/stories/space-astronomy/south-african-star-myths', 'South African star myths'), '. Traditions differ widely; corrections are welcome.'),
       h('li', {}, 'PDF export: ', link('https://github.com/parallax/jsPDF', 'jsPDF'), ' (MIT). Place search: ', link('https://open-meteo.com/', 'Open-Meteo'), '. Planet positions: Paul Schlyter\'s method.'),
-      h('li', {}, 'Overhead itself is MIT licensed.'))),
+      h('li', {}, 'Overhead itself is free for non-commercial use (PolyForm Noncommercial 1.0.0).'))),
 );
 $('#btn-about').addEventListener('click', () => about.showModal());
 about.addEventListener('click', (e) => { if (e.target === about || e.target.closest('[data-close]')) about.close(); });

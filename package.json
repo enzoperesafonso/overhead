@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Design and print a star map of any moment. Static, private, runs in the browser.",
   "type": "module",
-  "license": "MIT",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "scripts": {
     "start": "node server.mjs",
     "test": "node tools/chart-check.mjs && node tools/render-test.mjs",

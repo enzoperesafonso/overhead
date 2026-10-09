@@ -46,4 +46,4 @@ The app is plain static files (ES modules, no build step), so any static host wo
 Star, constellation, Milky Way and DSO data from [d3-celestial](https://github.com/ofrohn/d3-celestial) (BSD-3, Olaf Frohn; Hipparcos-derived). PDF via [jsPDF](https://github.com/parallax/jsPDF) (MIT). Planet positions use Paul Schlyter's low-precision method.
 
 ## License
-MIT, see [LICENSE](LICENSE). Bundled data and libraries keep their own licences (see `vendor/`).
+Free to use, copy and modify for non-commercial purposes under the [PolyForm Noncommercial License 1.0.0](LICENSE). Personal use and gifts are fine; selling it or using it commercially needs the author's permission. Bundled data and libraries keep their own licences (see `vendor/`).

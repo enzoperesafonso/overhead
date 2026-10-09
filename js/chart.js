@@ -375,6 +375,8 @@ function drawCover(S, cfg, g, notes, opts) {
 
   // horizon window
   const map = horizonMapper(g);
+  // labels inside the window stay the right way up even though the window itself is turned; x, y is the label's centre, dy the baseline drop
+  const upright = (str, x, y, dy, o) => (g.pocket ? S.text(str, 2 * cx - x + (o.align === 'center' ? 0 : 4.4 * sc), 2 * cy - y + dy, o) : S.text(str, x, y + dy, o));
   const win = Array.from({ length: 180 }, (_, i) => { const a = (i / 180) * 2 * Math.PI; return map([Math.sin(a), Math.cos(a), 0]); });
   G.save();
   G.clipPolygon(ring(Rh - 0.2 * sc));
@@ -393,12 +395,12 @@ function drawCover(S, cfg, g, notes, opts) {
     const dx = e[0] - i[0], dy = e[1] - i[1], len = Math.hypot(dx, dy) || 1;
     const card = names[az];
     const off = (card ? 5.2 : 3.6) * sc;
-    G.text(card || `${az}°`, e[0] + (dx / len) * off, e[1] + (dy / len) * off + (card ? 1.7 : 1.1) * sc, { font: 'sans', size: (card ? 7.5 : 4.6) * sc, color: ink, bold: !!card, align: 'center' });
+    upright(card || `${az}°`, e[0] + (dx / len) * off, e[1] + (dy / len) * off, (card ? 1.7 : 1.1) * sc, { font: 'sans', size: (card ? 7.5 : 4.6) * sc, color: ink, bold: !!card, align: 'center' });
   }
   const z = map([0, 0, 1]);
   G.line(z[0] - 1.6 * sc, z[1], z[0] + 1.6 * sc, z[1], { stroke: ink, lw: 0.2 * sc });
   G.line(z[0], z[1] - 1.6 * sc, z[0], z[1] + 1.6 * sc, { stroke: ink, lw: 0.2 * sc });
-  G.text('overhead', z[0] + 2.2 * sc, z[1] + 1.2 * sc, { font: 'sans', size: 4.6 * sc, color: ink, italic: true });
+  upright('overhead', z[0] + 2.2 * sc, z[1], 1.2 * sc, { font: 'sans', size: 4.6 * sc, color: ink, italic: true });
   G.restore();
   if (!g.pocket) {
     G.circle(cx, cy, 0.9 * sc, { fill: ink });

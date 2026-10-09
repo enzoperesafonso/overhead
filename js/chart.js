@@ -44,7 +44,11 @@ export function chartGeometry(cfg) {
   const b = cfg.bleed || 0;
   const sc = Math.min(W, H) / 210;
   const margin = 10 * sc, band = 9 * sc;
-  const Rw = W / 2 - margin; // outer edge of the wheel (date scale)
+  // Pocket mode: the cover is a larger plate whose outer flaps fold behind the wheel, so the wheel shrinks to leave room for them.
+  const pocket = !!cfg.chartPocket && cfg.chartKind !== 'zenith';
+  const flap = 12 * sc, slack = 0.8 * sc;
+  const Rout = W / 2 - 6 * sc; // outer edge of the pocket plate
+  const Rw = pocket ? Rout - flap - slack : W / 2 - margin; // outer edge of the wheel (date scale)
   const Rs = Rw - band; // edge of the star map
   const phi = Math.abs(cfg.lat), south = cfg.lat < 0;
   const proj = PROJ[cfg.chartProjection] || PROJ.equidistant;
@@ -53,7 +57,7 @@ export function chartGeometry(cfg) {
   const Rh = Rs - 8 * sc;
   const psiH = (180 - phi) * D2R;
   const psiMax = Math.min(170, proj.Finv((proj.F(psiH) * Rs) / (Rh - 7 * sc)) / D2R); // 7 mm spare for the N/E/S/W labels
-  return { W, H, b, sc, margin, band, Rw, Rs, Rh, cx: b + W / 2, cy: b + margin + Rw, phi, south, s: south ? -1 : 1, psiMax, projection, F: proj.F, k: Rs / proj.F(psiMax * D2R) };
+  return { W, H, b, sc, margin, band, Rw, Rs, Rh, cx: b + W / 2, cy: b + W / 2, phi, pocket, flap, slack, Rout, Rext: pocket ? Rout : Rw, south, s: south ? -1 : 1, psiMax, projection, F: proj.F, k: Rs / proj.F(psiMax * D2R) };
 }
 
 /** Maps a horizon-frame unit vector (E, N, Up) to a point on the cover, same scale as the wheel. */
@@ -124,7 +128,9 @@ export function chartNotes(cfg) {
     hemi,
     far: g.south ? 'N' : 'S', // the compass point opposite the elevated pole
     howTo: [
-      'Cut out the star wheel (page 1) and the cover (page 2). Cut away the window, then join them at the centre with a paper fastener.',
+      cfg.chartPocket
+        ? 'Cut out the star wheel (page 1) and the cover (page 2). Cut away the window, then slide the wheel into the cover pocket and fold the flaps behind it.'
+        : 'Cut out the star wheel (page 1) and the cover (page 2). Cut away the window, then join them at the centre with a paper fastener.',
       "Turn the wheel until today's date meets the time you are observing, read from the hour scale on the cover.",
       `Hold it overhead and turn so the compass direction you face (${hemi}, E, ${g.south ? 'N' : 'S'} or W) is at the bottom. The window shows the sky.`,
       'Stars near the window edge are low in the sky; the centre is straight overhead.',
@@ -259,7 +265,7 @@ function drawWheel(S, cfg, g, notes, data, opts) {
     ...cfg, frame: 'pole', fov: g.psiMax, projection: g.projection, belowHorizon: true, rotation: 0, mirror: false, extinction: false,
     shape: 'circle', ring: 'none', pageBorder: 'none', orientation: 'portrait', title: '', subtitle: '', footer: '',
     showDate: false, showPlace: false, showCoords: false, planets: false, sun: false, moon: false,
-    chartSize: ((2 * g.Rs) / g.W) * 100, chartTop: ((g.margin + g.band) / g.H) * 100, textPos: 'below', textGap: 0,
+    chartSize: ((2 * g.Rs) / g.W) * 100, chartTop: ((g.cy - g.b - g.Rs) / g.H) * 100, textPos: 'below', textGap: 0,
   };
   renderPoster(S, wcfg, data);
   const { cx, cy, Rs, Rw, band, sc, s } = g;
@@ -291,7 +297,7 @@ function drawWheel(S, cfg, g, notes, data, opts) {
     const [x, y] = pt(cx, cy, th, r);
     S.text(name, x, y, { font: 'sans', size: fs, color: col, bold: true, tracking: 0.12, align: 'center', rotate: top ? th : th + 180 });
   });
-  S.circle(cx, cy, 0.9 * sc, { fill: col }); // pivot
+  if (!g.pocket) S.circle(cx, cy, 0.9 * sc, { fill: col }); // pivot
 
   // text under the wheel
   const left = cfg.howTo ? [{ text: 'HOW TO USE', size: 7.2, bold: true, tracking: 0.14, gap: 1.6 }, ...notes.howTo.map((t, i) => ({ text: t, bullet: `${i + 1}.`, gap: 1.3 }))] : [];
@@ -303,11 +309,53 @@ function drawWheel(S, cfg, g, notes, data, opts) {
     { text: `${notes.time} Time zone: ${notes.zone}.`, size: 6.4, gap: 1.6, alpha: 0.9 },
     { text: 'Accuracy is roughly ±15 minutes through the year. Planets move, so they are not printed; look for steady, non-twinkling points.', size: 6, gap: 1, alpha: 0.75 },
   ] : [];
-  twoColumns(S, cfg, g, cy + Rw + 7 * sc, left, right);
+  twoColumns(S, cfg, g, cy + g.Rext + 7 * sc, left, right);
   footer(S, cfg, g, opts);
 }
 
 // ------------------------------------------------------------------ cover with the horizon window
+
+const BRIDGES = [45, 135, 225, 315]; // degrees from north; four links join the centre of the cover to its frame
+const FLAPS = 12;
+
+/** Pocket plate: a dodecagonal frame around the wheel, with an annular date opening and flaps that fold behind the wheel. */
+function drawPocket(S, g, ink) {
+  const { cx, cy, Rs, Rw, Rout, flap, slack, sc } = g;
+  const Rin = Rw - 1.2 * sc; // the frame overlaps the rim of the wheel by about a millimetre
+  const half = Math.PI / FLAPS;
+  const d = Rw + slack; // fold lines are tangent to this circle
+  const rEnd = d / Math.cos(half); // where each fold line meets its neighbour
+  const arc = (r, a0, a1, n = 48) => Array.from({ length: n + 1 }, (_, i) => { const a = a0 + ((a1 - a0) * i) / n; return [cx + r * Math.sin(a), cy - r * Math.cos(a)]; });
+  // outline with the slits between the flaps
+  const outline = [];
+  for (let i = 0; i < FLAPS; i++) {
+    const a0 = (i * 2 * half) - half + 0.012, a1 = ((i + 1) * 2 * half) - half - 0.012; // narrow slits, not cuts of zero width
+    outline.push(...arc(Rout, a0, a1, 12));
+    for (const e of [a1, a1 + 0.024]) outline.push([cx + rEnd * Math.sin(e), cy - rEnd * Math.cos(e)]);
+  }
+  S.poly([outline], { fill: '#ffffff', stroke: ink, lw: 0.4 * sc }, { closed: true });
+  // fold lines
+  const folds = [];
+  for (let i = 0; i < FLAPS; i++) {
+    const a = i * 2 * half;
+    const p0 = [cx + rEnd * Math.sin(a - half), cy - rEnd * Math.cos(a - half)], p1 = [cx + rEnd * Math.sin(a + half), cy - rEnd * Math.cos(a + half)];
+    folds.push([p0, p1]);
+  }
+  S.poly(folds, { stroke: ink, lw: 0.2 * sc, dash: [0.6 * sc, 0.9 * sc] });
+  // labels on two flaps
+  for (const a of [0, Math.PI]) {
+    const r = d + flap * 0.5;
+    S.text('FOLD BACK', cx + r * Math.sin(a), cy - r * Math.cos(a) + 1 * sc, { font: 'sans', size: 4.2 * sc, color: ink, bold: true, tracking: 0.12, align: 'center', rotate: a ? 180 : 0 });
+  }
+  // date openings between the bridges (cut away)
+  const gapA = (8 * sc) / ((Rs + Rin) / 2); // bridge width as an angle
+  for (let i = 0; i < BRIDGES.length; i++) {
+    const a0 = BRIDGES[i] * D2R + gapA / 2, a1 = BRIDGES[(i + 1) % BRIDGES.length] * D2R - gapA / 2 + (i === BRIDGES.length - 1 ? 2 * Math.PI : 0);
+    const ring = [...arc(Rin, a0, a1, 60), ...arc(Rs, a1, a0, 60)];
+    S.poly([ring], { fill: '#ffffff', stroke: ink, lw: 0.35 * sc, dash: [1.6 * sc, 1 * sc] }, { closed: true });
+  }
+  S.poly([arc(Rs, 0, 2 * Math.PI, 180)], { stroke: ink, lw: 0.2 * sc, alpha: 0.5 }, { closed: true });
+}
 
 function drawCover(S, cfg, g, notes, opts) {
   const { cx, cy, Rs, sc, s } = g;
@@ -315,7 +363,8 @@ function drawCover(S, cfg, g, notes, opts) {
   const ink = '#000000';
   const Rh = g.Rh;
   const ring = (r, n = 180) => Array.from({ length: n }, (_, i) => [cx + r * Math.cos((i / n) * 2 * Math.PI), cy + r * Math.sin((i / n) * 2 * Math.PI)]);
-  S.poly([ring(Rs)], { fill: '#ffffff', stroke: ink, lw: 0.45 * sc }, { closed: true });
+  if (g.pocket) drawPocket(S, g, ink);
+  else S.poly([ring(Rs)], { fill: '#ffffff', stroke: ink, lw: 0.45 * sc }, { closed: true });
 
   // hour scale
   S.circle(cx, cy, Rh, { stroke: ink, lw: 0.25 * sc });
@@ -361,8 +410,10 @@ function drawCover(S, cfg, g, notes, opts) {
   S.line(z[0], z[1] - 1.6 * sc, z[0], z[1] + 1.6 * sc, { stroke: ink, lw: 0.2 * sc });
   S.text('overhead', z[0] + 2.2 * sc, z[1] + 1.2 * sc, { font: 'sans', size: 4.6 * sc, color: ink, italic: true });
   S.restore();
-  S.circle(cx, cy, 0.9 * sc, { fill: ink });
-  S.text('pin', cx + 1.6 * sc, cy - 1 * sc, { font: 'sans', size: 4.4 * sc, color: ink, italic: true });
+  if (!g.pocket) {
+    S.circle(cx, cy, 0.9 * sc, { fill: ink });
+    S.text('pin', cx + 1.6 * sc, cy - 1 * sc, { font: 'sans', size: 4.4 * sc, color: ink, italic: true });
+  }
 
   // title, how-to, credit and logo on the face of the cover, in the solid area below the window
   const winBottom = Math.max(...win.map((p) => p[1]));
@@ -393,10 +444,12 @@ function drawCover(S, cfg, g, notes, opts) {
   column(S, cx, yLogo, widthAt, build(k), sc, ink, { center: true, font: cfg.bodyFont });
 
   // assembly note and footer on the sheet around the disc (cut away afterwards)
-  const y0 = cy + g.Rw + 7 * sc;
+  const y0 = cy + g.Rext + 7 * sc;
   column(S, g.b + g.margin, y0, g.W - 2 * g.margin, [
-    { text: 'COVER', size: 7.2, bold: true, tracking: 0.14, gap: 1.6 },
-    { text: 'Cut around the outer circle, then cut away the window along the dashed line. Fasten it over the star wheel at the centre dot. The cover is slightly smaller than the wheel so the date scale shows around the edge.', gap: 1.6 },
+    { text: g.pocket ? 'COVER WITH POCKET' : 'COVER', size: 7.2, bold: true, tracking: 0.14, gap: 1.6 },
+    { text: g.pocket
+      ? 'Cut out the cover along the solid line and make the slits between the flaps. Cut away the horizon window and the two date openings (dashed), leaving the four bridges. Lay the cover face down, place the star wheel face down on it, and fold every flap back along its dotted line. Tape the flaps down to each other, not to the wheel. The wheel now spins freely inside the pocket and no pin is needed.'
+      : 'Cut around the outer circle, then cut away the window along the dashed line. Fasten it over the star wheel at the centre dot. The cover is slightly smaller than the wheel so the date scale shows around the edge.', gap: 1.6 },
     { text: `${notes.title} for latitude ${g.phi.toFixed(2)}°${notes.hemi}. ${notes.range} ${notes.time}`, alpha: 0.85, gap: 1 },
   ], sc, cfg.textColor, { font: cfg.bodyFont });
   footer(S, cfg, g, opts);

@@ -121,6 +121,7 @@ export const DEFAULTS = {
   chartProjection: 'equidistant',
   chartTitle: '',
   howTo: true,
+  chartPocket: true, // planisphere: the cover is a pocket that holds the wheel, instead of a paper-fastener pivot
   details: true,
   credit: true,
   logoMode: 'default', // 'default' = the Overhead logo, 'custom' = uploaded, 'none'

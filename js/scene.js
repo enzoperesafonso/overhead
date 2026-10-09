@@ -18,7 +18,7 @@ const dirVec = (deg) => [Math.sin(rad(deg)), -Math.cos(rad(deg))]; // 0° is up,
 /** A tapering, fading streak from p0 along unit vector t. w(s) is the half-width and a(s) the opacity at s = 0..1 along the length.
  *  It is built from nested shapes, each reaching a little farther than the last, so the fade along the length is smooth and has no seams;
  *  `layers` stacks narrower copies so the edges feather out instead of ending in a hard line. */
-function streak(S, [x, y], t, len, w, a, color, { bend = 0, levels = 44, layers = 1 } = {}) {
+function streak(S, [x, y], t, len, w, a, color, { bend = 0, levels = 28, layers = 1 } = {}) {
   const n = [-t[1], t[0]];
   const at = (s) => {
     const d = len * s, off = bend * len * s * s;
@@ -65,9 +65,9 @@ function drawComet(S, x, y, { size, tailAngle, tailLen, color, mono, bg }) {
   // coma: a halo that falls away smoothly, a brighter inner coma, then a small hard nucleus
   for (let j = 30; j >= 1; j--) {
     const q = j / 30;
-    S.circle(x, y, rc * (0.3 + 2.1 * q), { fill: glow, alpha: (mono ? 0.025 : 0.035) + (mono ? 0.07 : 0.11) * (1 - q) ** 2.5 });
+    S.circle(x, y, rc * (0.25 + 1.0 * q), { fill: glow, alpha: (mono ? 0.03 : 0.045) + (mono ? 0.08 : 0.13) * (1 - q) ** 2.5 });
   }
-  for (let j = 10; j >= 1; j--) S.circle(x, y, rc * (0.2 + 0.7 * (j / 10)), { fill: glow, alpha: mono ? 0.05 : 0.12 });
+  for (let j = 10; j >= 1; j--) S.circle(x, y, rc * (0.18 + 0.45 * (j / 10)), { fill: glow, alpha: mono ? 0.05 : 0.12 });
   if (mono) S.circle(x, y, rc * 0.42, { fill: bg });
   S.circle(x, y, rc * (mono ? 0.3 : 0.24), { fill: mono ? color : '#ffffff' });
 }

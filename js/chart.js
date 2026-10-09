@@ -335,12 +335,12 @@ function drawPocket(S, g, ink) {
   const { cx, cy, Rs, Wp, yF, Hf, sc } = g;
   const hood = Array.from({ length: 91 }, (_, i) => { const a = -Math.PI / 2 + (Math.PI * i) / 90; return [cx + Rs * Math.sin(a), cy - Rs * Math.cos(a)]; });
   S.poly([[...hood, [cx + Wp, cy], [cx + Wp, yF + Hf], [cx - Wp, yF + Hf], [cx - Wp, cy]]], { fill: '#ffffff', stroke: ink, lw: 0.45 * sc }, { closed: true });
-  S.line(cx - Wp, yF, cx + Wp, yF, { stroke: ink, lw: 0.25 * sc, dash: [0.8 * sc, 1.1 * sc] });
+  S.line(cx - Wp, yF, cx + Wp, yF, { stroke: ink, lw: 0.2 * sc, dash: [0.8 * sc, 1.1 * sc], alpha: 0.8 });
   S.text('FOLD UP BEHIND THE WHEEL', cx, yF + 4.2 * sc, { font: 'sans', size: 4.4 * sc, color: ink, bold: true, tracking: 0.14, align: 'center' });
   for (const sx of [-1, 1]) { // glue or tape the flap to the front along these strips
     const x0 = sx < 0 ? cx - Wp : cx + Wp - 7 * sc;
-    S.rect(x0, cy + 6 * sc, 7 * sc, yF - cy - 6 * sc, { stroke: ink, lw: 0.15 * sc, dash: [0.8 * sc, 1.1 * sc] });
-    S.text('TAPE', x0 + 3.5 * sc + 1.5 * sc, yF - 8 * sc, { font: 'sans', size: 4 * sc, color: ink, bold: true, tracking: 0.14, rotate: -90 });
+    S.rect(x0, cy + 6 * sc, 7 * sc, yF - cy - 6 * sc, { stroke: ink, lw: 0.15 * sc, dash: [0.8 * sc, 1.1 * sc], alpha: 0.6 });
+    S.text('TAPE', x0 + 3.5 * sc + 1.5 * sc, yF - 8 * sc, { font: 'sans', size: 4 * sc, color: ink, bold: true, tracking: 0.14, alpha: 0.8, rotate: -90 });
   }
 }
 

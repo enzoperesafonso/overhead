@@ -56,7 +56,7 @@ export function chartGeometry(cfg) {
   const psiH = (180 - phi) * D2R;
   const psiMax = Math.min(170, proj.Finv((proj.F(psiH) * Rs) / (Rh - 7 * sc)) / D2R); // 7 mm spare for the N/E/S/W labels
   const cy = b + W / 2, Wp = Rw + 3 * sc, yF = cy + Rw + 3 * sc; // pocket: half-width, fold line, flap height
-  const Hf = Math.min(0.92 * Rw, b + H - 15 * sc - yF);
+  const Hf = Math.min(0.92 * Rw, b + H - 19 * sc - yF); // the flap stops above the footer logo
   return { W, H, b, sc, margin, band, Rw, Rs, Rh, cx: b + W / 2, cy, Wp, yF, Hf, phi, pocket, south, s: south ? -1 : 1, psiMax, projection, F: proj.F, k: Rs / proj.F(psiMax * D2R) };
 }
 
